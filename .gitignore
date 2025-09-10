@@ -48,7 +48,6 @@ _ReSharper*/
 # Node / Frontend assets
 ############################
 node_modules/
-dist/
 *.tgz
 npm-debug.log*
 yarn-debug.log*
@@ -62,7 +61,6 @@ ScaffoldingReadMe.txt
 ############################
 # Blazor specifics
 ############################
-wwwroot/dist/
 wwwroot/node_modules/
 wwwroot/_framework/
 wwwroot/.vsblazor/
