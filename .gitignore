@@ -1,33 +1,52 @@
+############################
 # .NET build folders
+############################
 bin/
 obj/
 out/
 
+############################
 # Visual Studio / Rider / VS Code
+############################
 .vs/
 .idea/
 .vscode/
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
 
+############################
 # User-specific files
+############################
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
 
+############################
 # Build results
+############################
 *.exe
 *.dll
 *.pdb
 *.dbmdl
 *.log
+*.tlog
+*.svclog
 
-# Packages
+############################
+# NuGet
+############################
 *.nupkg
 *.snupkg
 *.nuspec
-*.tgz
+.nuget/
+*.ncrunchsolution
+*.ncrunchproject
 
-# Node (if using npm/yarn for frontend assets)
+############################
+# Node / Frontend assets
+############################
 node_modules/
 dist/
 *.tgz
@@ -35,19 +54,52 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+############################
 # ASP.NET Scaffolding
+############################
 ScaffoldingReadMe.txt
 
-# Publish output
+############################
+# Blazor specifics
+############################
 wwwroot/dist/
 wwwroot/node_modules/
+wwwroot/_framework/
+wwwroot/.vsblazor/
+.obj/
+
+############################
+# Publish output
+############################
 publish/
 *.pubxml
 *.pubxml.user
 
+############################
 # Azure functions / hosting artifacts
+############################
 .local.settings.json
 
+############################
+# Secrets / Configs (local only)
+############################
+secrets.json
+appsettings.Development.json
+
+############################
+# Databases (local dev only)
+############################
+*.mdf
+*.ldf
+*.sqlite
+
+############################
 # Mac/Linux system files
+############################
 .DS_Store
 Thumbs.db
+
+############################
+# VS Code local history
+############################
+.history/
