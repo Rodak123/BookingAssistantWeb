@@ -1,0 +1,53 @@
+# .NET build folders
+bin/
+obj/
+out/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+*.exe
+*.dll
+*.pdb
+*.dbmdl
+*.log
+
+# Packages
+*.nupkg
+*.snupkg
+*.nuspec
+*.tgz
+
+# Node (if using npm/yarn for frontend assets)
+node_modules/
+dist/
+*.tgz
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Publish output
+wwwroot/dist/
+wwwroot/node_modules/
+publish/
+*.pubxml
+*.pubxml.user
+
+# Azure functions / hosting artifacts
+.local.settings.json
+
+# Mac/Linux system files
+.DS_Store
+Thumbs.db
