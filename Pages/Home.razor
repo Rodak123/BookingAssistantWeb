@@ -15,7 +15,7 @@
     <br />
 } -->
 
-<!-- @if (phoneNumbers is null)
+@if (phoneNumbers is null)
 {
     <p>Načítám...</p>
 }
@@ -25,17 +25,17 @@ else
     {
         <p>@number.Value</p>
     }
-} -->
+}
 
 @code {
-    //List<PhoneNumber>? phoneNumbers;
+    List<PhoneNumber>? phoneNumbers;
 
-    //protected override async Task OnInitializedAsync()
-    //{
-      //  var response = await Http.GetFromJsonAsync<PhoneNumbersResponse>("user/numbers");
-        //if (response != null)
-        //{
-         //   phoneNumbers = response.PhoneNumbers;
-        //}
-    //} 
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetFromJsonAsync<PhoneNumbersResponse>("user/numbers");
+        if (response != null)
+        {
+            phoneNumbers = response.PhoneNumbers;
+        }
+    } 
 }
