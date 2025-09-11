@@ -1,32 +1,41 @@
 ﻿@page "/"
+@using BookingAssistantWeb.Models
+@inject HttpClient Http
 
 <PageTitle>Home</PageTitle>
 
 <h1>Moje čísla</h1>
 
-@foreach (var number in numbers)
+<!-- @foreach (var number in numbers)
 {
     // Odkaz na stránku s detailem čísla, jako GET parametr nedávat číslo, ale ID čísla z databáze
     // Pro jednoduchost zde používáme samotné číslo jako identifikátor, ale v reálné aplikaci by to mělo být ID z DB
     // Například: <NavLink href="@("/number/" + number.Id)">@number</NavLink>
     <NavLink href="@("/number/" + number)">@number</NavLink>
     <br />
-}
+} -->
 
+<!-- @if (phoneNumbers is null)
+{
+    <p>Načítám...</p>
+}
+else
+{
+    @foreach (var number in phoneNumbers)
+    {
+        <p>@number.Value</p>
+    }
+} -->
 
 @code {
-    List<int> numbers = new();
+    //List<PhoneNumber>? phoneNumbers;
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Simulace načtení dat z databáze
-        numbers = await LoadNumbersFromDatabaseAsync();
-    }
-
-    // Funkce, která načte seznam čísel
-    private Task<List<int>> LoadNumbersFromDatabaseAsync()
-    {
-        // Zde by byl dotaz na DB, teď jen simulace
-        return Task.FromResult(new List<int> { 739004064, 123456789, 987654321, 111222333 });
-    }
+    //protected override async Task OnInitializedAsync()
+    //{
+      //  var response = await Http.GetFromJsonAsync<PhoneNumbersResponse>("user/numbers");
+        //if (response != null)
+        //{
+         //   phoneNumbers = response.PhoneNumbers;
+        //}
+    //} 
 }

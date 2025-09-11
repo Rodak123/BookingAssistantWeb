@@ -1,18 +1,20 @@
 ﻿@page "/counter"
+@inject HttpClient Http
 
 <PageTitle>Counter</PageTitle>
 
-<h1>Counter</h1>
+<h1>Api Server</h1>
 
-<p role="status">Current count: @currentCount</p>
+<p role="status">Api Server: @apiServer</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
 @code {
-    private int currentCount = 0;
+    private string apiServer = string.Empty;
+    private string Path = "appsettings.json";
+    private string key = "ApiServer";
 
-    private void IncrementCount()
+    protected override async Task OnInitializedAsync()
     {
-        currentCount++;
+        apiServer = (await Http.GetFromJsonAsync<Dictionary<string, string>>(Path))[key];
     }
 }
