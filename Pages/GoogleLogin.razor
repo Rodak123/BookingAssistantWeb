@@ -1,41 +1,31 @@
 @page "/google-login"
 @inject IJSRuntime JS
+@inject TokenService TokenService
 
 <h1>Google OAuth + JWT Test</h1>
 
 <div id="g_id_onload"></div>
 <div class="g_id_signin"></div>
 
-<button @onclick="GetSecureData" disabled="@(!IsLoggedIn)">Get Secure Data</button>
+<button @onclick="GetSecureData" disabled="@(!TokenService.IsLoggedIn)">Get Secure Data</button>
 <pre>@Output</pre>
 
 @code {
-    private bool IsLoggedIn = false;
     private string Output = "";
-    private string? JwtToken;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Initialize Google login JS
-            await JS.InvokeVoidAsync("initializeGoogleLogin", DotNetObjectReference.Create(this));
+            // Initialize Google login button
+            await JS.InvokeVoidAsync("initializeGoogleLogin");
+            StateHasChanged();
         }
-    }
-
-    [JSInvokable]
-    public void SetJwtToken(string token)
-    {
-        JwtToken = token;
-        IsLoggedIn = true;
-        StateHasChanged();
     }
 
     private async Task GetSecureData()
     {
-        if (string.IsNullOrEmpty(JwtToken)) return;
-
-        var data = await JS.InvokeAsync<string>("fetchSecureData", JwtToken);
+        var data = await JS.InvokeAsync<string>("fetchSecureDataWithAutoRefresh");
         Output = data;
     }
 }
