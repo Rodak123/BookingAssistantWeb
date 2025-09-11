@@ -1,0 +1,30 @@
+@page "/target/{PhoneId?}/{Message}"
+@inject NavigationManager Navigation
+
+<PageTitle>Konfigurace možností</PageTitle>
+
+<h3>Target Page</h3>
+<p>You received: @Message</p>
+
+@* <button class="btn btn-primary" @onclick=''>Button 1</button> *@
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+    [Parameter]
+    public string? PhoneId { get; set; }
+
+    public class ConfigData
+{
+    public string? PhoneId { get; set; }
+    public string? Message { get; set; }
+    public string BookingWindow { get; set; } = string.Empty; // store as "hh:mm:ss"
+    public string BookingMargin { get; set; } = string.Empty;
+    public string BookingInterval { get; set; } = string.Empty;
+    public string WorkingHoursStart { get; set; } = string.Empty; // store as "HH:mm"
+    public string WorkingHoursEnd { get; set; } = string.Empty;
+}
+
+
+    
+}
