@@ -1,4 +1,40 @@
 ﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@inject TokenService TokenService
+
+@code {
+    private DotNetObjectReference<MainLayout>? DotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            DotNetRef = DotNetObjectReference.Create(this);
+            // Call JS function to refresh access token using refresh token cookie
+            await JS.InvokeAsync<string>("refreshAccessToken", DotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void SetJwtToken(string token)
+    {
+        TokenService.AccessToken = token;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void ClearJwtToken()
+    {
+        TokenService.Clear();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        DotNetRef?.Dispose();
+    }
+}
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />

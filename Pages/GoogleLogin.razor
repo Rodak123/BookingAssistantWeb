@@ -1,0 +1,31 @@
+@page "/google-login"
+@inject IJSRuntime JS
+@inject TokenService TokenService
+
+<h1>Google OAuth + JWT Test</h1>
+
+<div id="g_id_onload"></div>
+<div class="g_id_signin"></div>
+
+<button @onclick="GetSecureData" disabled="@(!TokenService.IsLoggedIn)">Get Secure Data</button>
+<pre>@Output</pre>
+
+@code {
+    private string Output = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Initialize Google login button
+            await JS.InvokeVoidAsync("initializeGoogleLogin");
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetSecureData()
+    {
+        var data = await JS.InvokeAsync<string>("fetchSecureDataWithAutoRefresh");
+        Output = data;
+    }
+}
