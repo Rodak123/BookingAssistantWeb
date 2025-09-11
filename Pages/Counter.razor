@@ -1,20 +1,10 @@
 ﻿@page "/counter"
-@inject HttpClient Http
+@using BookingAssistantWeb.Services
+
+@inject AppsettingsService AppsettingsService
 
 <PageTitle>Counter</PageTitle>
 
 <h1>Api Server</h1>
 
-<p role="status">Api Server: @apiServer</p>
-
-
-@code {
-    private string apiServer = string.Empty;
-    private string Path = "appsettings.json";
-    private string key = "ApiServer";
-
-    protected override async Task OnInitializedAsync()
-    {
-        apiServer = (await Http.GetFromJsonAsync<Dictionary<string, string>>(Path))[key];
-    }
-}
+<p role="status">Api Server: @AppsettingsService.ApiServer</p>

@@ -1,52 +1,75 @@
-﻿@inherits LayoutComponentBase
+﻿@using BookingAssistantWeb.Services
+@inherits LayoutComponentBase
 @inject IJSRuntime JS
 @inject TokenService TokenService
+@inject AppsettingsService AppsettingsService
+@inject HttpClient Http
 
 @code {
-    private DotNetObjectReference<MainLayout>? DotNetRef;
+  private DotNetObjectReference<MainLayout>? DotNetRef;
+  private string AppsettingsPath = "appsettings.json";
+  private bool _appsettingsLoaded = false;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            DotNetRef = DotNetObjectReference.Create(this);
-            // Call JS function to refresh access token using refresh token cookie
-            await JS.InvokeAsync<string>("refreshAccessToken", DotNetRef);
-        }
-    }
+  protected override async Task OnInitializedAsync()
+  {
+    // Load appsettings from JSON
+    var appsettings = await Http.GetFromJsonAsync<Dictionary<string, string>>(AppsettingsPath);
+    if (appsettings == null || appsettings.Count == 0)
+      throw new Exception("Failed to load appsettings.");
 
-    [JSInvokable]
-    public void SetJwtToken(string token)
-    {
-        TokenService.AccessToken = token;
-        StateHasChanged();
-    }
+    AppsettingsService.Load(appsettings);
+    _appsettingsLoaded = true;
 
-    [JSInvokable]
-    public void ClearJwtToken()
-    {
-        TokenService.Clear();
-        StateHasChanged();
-    }
+    // Create DotNetObjectReference for JS interop
+    DotNetRef = DotNetObjectReference.Create(this);
 
-    public void Dispose()
-    {
-        DotNetRef?.Dispose();
-    }
+    // Call JS to refresh token after AppsettingsService is ready
+    if (string.IsNullOrEmpty(AppsettingsService.ApiServer))
+      throw new Exception("ApiServer not set in AppsettingsService");
+
+    await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
+    Console.WriteLine($"JS call made with: {AppsettingsService.ApiServer}");
+  }
+
+  [JSInvokable]
+  public void SetJwtToken(string token)
+  {
+    TokenService.AccessToken = token;
+    StateHasChanged();
+  }
+
+  [JSInvokable]
+  public void ClearJwtToken()
+  {
+    TokenService.Clear();
+    StateHasChanged();
+  }
+
+  public void Dispose()
+  {
+    DotNetRef?.Dispose();
+  }
 }
 
-<div class="page">
+@if (!_appsettingsLoaded)
+{
+  <p>Loading...</p>
+}
+else
+{
+  <div class="page">
     <div class="sidebar">
-        <NavMenu />
+      <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+      <div class="top-row px-4">
+        <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+      </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
+      <article class="content px-4">
+        @Body
+      </article>
     </main>
-</div>
+  </div>
+}
