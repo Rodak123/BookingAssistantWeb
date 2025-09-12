@@ -6,6 +6,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<AppsettingsService>();
+// builder.Services.AddSingleton<AppState>();
 
 builder.RootComponents.Add<App>("#app");
 
