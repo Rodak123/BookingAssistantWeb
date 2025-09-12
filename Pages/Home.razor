@@ -1,6 +1,12 @@
 ﻿@page "/"
 @using BookingAssistantWeb.Models
+@using BookingAssistantWeb.Services
+@using System.Text.Json
 @inject HttpClient Http
+@inject IJSRuntime JS
+@inject TokenService TokenService
+@inject AppsettingsService AppsettingsService;
+@inject NavigationManager NavigationManager;
 
 <PageTitle>Home</PageTitle>
 
@@ -20,22 +26,37 @@
     <p>Načítám...</p>
 }
 else
-{
-    @foreach (var number in phoneNumbers)
+{ 
+    @foreach (var phone in phoneNumbers)
     {
-        <p>@number.Value</p>
+        <NavLink href="@($"/number/{phone.Id}")">@phone.Number</NavLink><br />
     }
 }
+
+<button @onclick="RedirectAddNumber">Přidat číslo</button>
 
 @code {
     List<PhoneNumber>? phoneNumbers;
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await Http.GetFromJsonAsync<PhoneNumbersResponse>("user/numbers");
-        if (response != null)
+        var response = await JS.InvokeAsync<string>("fetchApi", AppsettingsService.ApiServer, "/user/numbers");
+        //Console.WriteLine($"Response from /user/numbers: {response}");
+
+        if (!string.IsNullOrEmpty(response))
         {
-            phoneNumbers = response.PhoneNumbers;
+            var result = JsonSerializer.Deserialize<PhoneNumbersResponse>(response, 
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            phoneNumbers = result?.PhoneNumbers;
         }
-    } 
+    }
+
+
+    private void RedirectAddNumber()
+    {
+        // Redirect to /number-select page
+        var uri = new Uri(NavigationManager.Uri);
+        var baseUri = uri.GetLeftPart(UriPartial.Authority);
+        NavigationManager.NavigateTo($"{baseUri}/number-select");
+    }
 }
