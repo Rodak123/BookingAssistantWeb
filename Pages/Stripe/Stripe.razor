@@ -1,0 +1,61 @@
+@page "/stripe"
+@using BookingAssistantWeb.Services
+@using System.Text.Json
+
+@inject AppsettingsService AppsettingsService
+@inject TokenService TokenService
+@inject IJSRuntime JS
+
+<PageTitle>Stripe</PageTitle>
+
+<h1>Stripe</h1>
+<button @onclick="Checkout">Checkout</button>
+
+@code {
+  public class StripeCheckoutSessionData
+  {
+    public string LookupKey { get; set; } = "basic_plan";
+  }
+
+  public class StripeCheckoutSessionResponse
+  {
+    public string sessionUrl { get; set; } = "";
+  }
+
+  private async Task Checkout()
+  {
+    await CreateCheckoutSession();
+  }
+
+  protected async Task CreateCheckoutSession()
+  {
+    StripeCheckoutSessionData data = new()
+    {
+      LookupKey = "basic_plan"
+    };
+
+    string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+
+    var responseJson = await JS.InvokeAsync<string>(
+    "fetchApi", AppsettingsService.ApiServer,
+    "/stripe/create-checkout-session", "POST", json
+    );
+
+    if (string.IsNullOrEmpty(responseJson))
+    {
+      Console.WriteLine("Failed to create checkout session");
+      return;
+    }
+
+    StripeCheckoutSessionResponse response = JsonSerializer.Deserialize<StripeCheckoutSessionResponse>(responseJson)!;
+
+    if (response == null)
+    {
+      Console.WriteLine("Failed to deserialize checkout session response");
+      return;
+    }
+
+    Console.WriteLine(response.sessionUrl);
+    await JS.InvokeVoidAsync("eval", $"window.location.href='{response.sessionUrl}';");
+  }
+}

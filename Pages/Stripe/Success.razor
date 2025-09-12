@@ -1,0 +1,93 @@
+@page "/stripe/success"
+@using BookingAssistantWeb.Services
+@using System.Text.Json
+
+@inject AppsettingsService AppsettingsService
+@inject TokenService TokenService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Stripe Success</PageTitle>
+
+<h1>Stripe Success</h1>
+<button @onclick="OpenPortal">Open Portal</button>
+
+@code {
+  public class StripePortalSessionData
+  {
+    public string SessionId { get; set; } = "";
+  }
+
+  public class StripePortalSessionResponse
+  {
+    public string sessionUrl { get; set; } = "";
+  }
+
+  private string? sessionId;
+
+  protected override void OnInitialized()
+  {
+    var uri = new Uri(Navigation.Uri);
+    var query = uri.Query;
+
+    if (!string.IsNullOrEmpty(query))
+    {
+      var queryString = query.TrimStart('?');
+      var parameters = queryString.Split('&', StringSplitOptions.RemoveEmptyEntries);
+
+      foreach (var param in parameters)
+      {
+        var kv = param.Split('=', 2);
+        if (kv.Length == 2 && kv[0] == "session_id")
+        {
+          sessionId = Uri.UnescapeDataString(kv[1]);
+          Console.WriteLine($"Session ID: {sessionId}");
+          break;
+        }
+      }
+    }
+  }
+
+  private async Task OpenPortal()
+  {
+    await CreatePortalSession();
+  }
+
+  protected async Task CreatePortalSession()
+  {
+    if (sessionId == null)
+    {
+      Console.WriteLine("No session ID");
+      return;
+    }
+
+    StripePortalSessionData data = new()
+    {
+      SessionId = sessionId
+    };
+
+    string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+
+    var responseJson = await JS.InvokeAsync<string>(
+    "fetchApi", AppsettingsService.ApiServer,
+    "/stripe/create-portal-session", "POST", json
+    );
+
+    if (string.IsNullOrEmpty(responseJson))
+    {
+      Console.WriteLine("Failed to create portal session");
+      return;
+    }
+
+    StripePortalSessionResponse response = JsonSerializer.Deserialize<StripePortalSessionResponse>(responseJson)!;
+
+    if (response == null)
+    {
+      Console.WriteLine("Failed to deserialize portal session response");
+      return;
+    }
+
+    Console.WriteLine(response.sessionUrl);
+    await JS.InvokeVoidAsync("eval", $"window.location.href='{response.sessionUrl}';");
+  }
+}
