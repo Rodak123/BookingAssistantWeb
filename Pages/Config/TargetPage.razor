@@ -1,12 +1,19 @@
-@page "/target/{PhoneId?}/{Message}"
+@page "/target/{Message}"
 @inject NavigationManager Navigation
+@inject HttpClient Http
+@inject AppsettingsService AppsettingsService;
+
+@using System.Text.Json
+@using BookingAssistantWeb.Services
 
 <PageTitle>Konfigurace možností</PageTitle>
 
 <h3>Target Page</h3>
 <p>You received: @Message</p>
 
-@* <button class="btn btn-primary" @onclick=''>Button 1</button> *@
+<button class="btn btn-primary" @onclick="SaveAndSend">Save & Send Config</button>
+
+<p>@status</p>
 
 @code {
     [Parameter]
@@ -14,17 +21,50 @@
     [Parameter]
     public string? PhoneId { get; set; }
 
+    private string status = "";
+
     public class ConfigData
-{
-    public string? PhoneId { get; set; }
-    public string? Message { get; set; }
-    public string BookingWindow { get; set; } = string.Empty; // store as "hh:mm:ss"
-    public string BookingMargin { get; set; } = string.Empty;
-    public string BookingInterval { get; set; } = string.Empty;
-    public string WorkingHoursStart { get; set; } = string.Empty; // store as "HH:mm"
-    public string WorkingHoursEnd { get; set; } = string.Empty;
-}
+    {
+        public string? PhoneId { get; set; }
+        public string? Message { get; set; }
+        public string BookingWindow { get; set; } = string.Empty; // "hh:mm:ss"
+        public string BookingMargin { get; set; } = string.Empty;
+        public string BookingInterval { get; set; } = string.Empty;
+        public string WorkingHoursStart { get; set; } = string.Empty; // "HH:mm"
+        public string WorkingHoursEnd { get; set; } = string.Empty;
+    }
 
+    private async Task SaveAndSend()
+    {
+        // Fill the object (you can later bind these values from inputs)
+        var config = new ConfigData
+        {
+            PhoneId = PhoneId ?? "12345",
+            Message = Message ?? "Default message",
+            BookingWindow = "02:00:00",
+            BookingMargin = "00:15:00",
+            BookingInterval = "00:30:00",
+            WorkingHoursStart = "09:00",
+            WorkingHoursEnd = "17:00"
+        };
 
-    
+        // Convert to JSON
+        string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+        status = $"Serialized JSON:\n{json}";
+
+        // Send JSON to API
+        var response = await Http.PostAsync($"{AppsettingsService.ApiServer}/number/config",
+            new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
+
+        if (response.IsSuccessStatusCode)
+        {
+            status = "Saved successfully! Redirecting...";
+            await Task.Delay(1000); // small delay so user sees the message
+            Navigation.NavigateTo("/success");
+        }
+        else
+        {
+            status = $"Error: {response.StatusCode}";
+        }
+    }
 }
