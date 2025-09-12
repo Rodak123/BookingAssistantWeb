@@ -1,14 +1,18 @@
-public class TokenService
+namespace BookingAssistantWeb.Services
 {
-    private string? _accessToken;
-
-    public string? AccessToken
+    public class TokenService
     {
-        get => _accessToken;
-        set => _accessToken = value;
+        private string? accessToken;
+
+        public string? AccessToken
+        {
+            get => accessToken;
+            set => accessToken = value;
+        }
+
+        public bool IsLoggedIn => !string.IsNullOrEmpty(accessToken);
+
+        public void Clear() => accessToken = null;
     }
 
-    public bool IsLoggedIn => !string.IsNullOrEmpty(_accessToken);
-
-    public void Clear() => _accessToken = null;
 }

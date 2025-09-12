@@ -1,7 +1,62 @@
 ﻿@page "/"
+@using BookingAssistantWeb.Models
+@using BookingAssistantWeb.Services
+@using System.Text.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject TokenService TokenService
+@inject AppsettingsService AppsettingsService;
+@inject NavigationManager NavigationManager;
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Moje čísla</h1>
 
-Welcome to your new app.
+<!-- @foreach (var number in numbers)
+{
+    // Odkaz na stránku s detailem čísla, jako GET parametr nedávat číslo, ale ID čísla z databáze
+    // Pro jednoduchost zde používáme samotné číslo jako identifikátor, ale v reálné aplikaci by to mělo být ID z DB
+    // Například: <NavLink href="@("/number/" + number.Id)">@number</NavLink>
+    <NavLink href="@("/number/" + number)">@number</NavLink>
+    <br />
+} -->
+
+@if (phoneNumbers is null)
+{
+    <p>Načítám...</p>
+}
+else
+{ 
+    @foreach (var phone in phoneNumbers)
+    {
+        <NavLink href="@($"/number/{phone.Id}")">@phone.Number</NavLink><br />
+    }
+}
+
+<button @onclick="RedirectAddNumber">Přidat číslo</button>
+
+@code {
+    List<PhoneNumber>? phoneNumbers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await JS.InvokeAsync<string>("fetchApi", AppsettingsService.ApiServer, "/user/numbers");
+        //Console.WriteLine($"Response from /user/numbers: {response}");
+
+        if (!string.IsNullOrEmpty(response))
+        {
+            var result = JsonSerializer.Deserialize<PhoneNumbersResponse>(response, 
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            phoneNumbers = result?.PhoneNumbers;
+        }
+    }
+
+
+    private void RedirectAddNumber()
+    {
+        // Redirect to /number-select page
+        var uri = new Uri(NavigationManager.Uri);
+        var baseUri = uri.GetLeftPart(UriPartial.Authority);
+        NavigationManager.NavigateTo($"{baseUri}/number-select");
+    }
+}

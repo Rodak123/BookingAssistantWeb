@@ -1,0 +1,20 @@
+@page "/number-select/{PhoneId:int}"
+@inject NavigationManager Navigation
+
+<PageTitle>Config Buttons</PageTitle>
+
+<h3>Configurace</h3>
+
+<p>Zadané číslo: @PhoneId</p>
+
+<button class="btn btn-primary" @onclick='() => NavigateWithParam("Hello from Button 1")'>Button 1</button>
+<button class="btn btn-secondary" @onclick='() => NavigateWithParam("Hello from Button 2")'>Button 2</button>   
+
+@code {
+    [Parameter]
+    public int? PhoneId { get; set; }
+    private void NavigateWithParam(string message)
+    {
+        Navigation.NavigateTo($"/target/{Uri.EscapeDataString(message)}/{PhoneId}");
+    }
+}

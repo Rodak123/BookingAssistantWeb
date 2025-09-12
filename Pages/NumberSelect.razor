@@ -1,0 +1,42 @@
+@page "/number-select"
+@using BookingAssistantWeb.Models
+@using BookingAssistantWeb.Services
+@using System.Text.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject TokenService TokenService
+@inject AppsettingsService AppsettingsService;
+@inject NavigationManager NavigationManager;
+
+
+<PageTitle>Number Select</PageTitle>
+<h1>Number Select</h1>
+
+@if (phoneNumbers is null)
+{
+    <p>Načítám...</p>
+}
+else
+{
+    @foreach (var phone in phoneNumbers)
+    {
+        <NavLink href="@($"/number-select/{phone.Id}")">@phone.Number</NavLink><br/>
+    }
+}
+
+@code {
+    List<PhoneNumber>? phoneNumbers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await JS.InvokeAsync<string>("fetchApi", AppsettingsService.ApiServer, "/numbers/free");
+        //Console.WriteLine($"Response from /numbers/free: {response}");
+
+        if (!string.IsNullOrEmpty(response))
+        {
+            var result = JsonSerializer.Deserialize<PhoneNumbersResponse>(response, 
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            phoneNumbers = result?.PhoneNumbers;
+        }
+    }
+}
