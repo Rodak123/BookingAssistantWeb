@@ -28,7 +28,7 @@
       throw new Exception("ApiServer not set in AppsettingsService");
 
     await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
-    Console.WriteLine($"JS call made with: {AppsettingsService.ApiServer}");
+    // Console.WriteLine($"JS call made with: {AppsettingsService.ApiServer}");
   }
 
   [JSInvokable]
