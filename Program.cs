@@ -10,7 +10,9 @@ builder.Services.AddSingleton<AppsettingsService>();
 // builder.Services.AddSingleton<AppState>();
 
 builder.Services.AddAuthorizationCore();
+
 builder.Services.AddScoped<AuthenticationStateProvider, FakeAuthStateProvider>();
+builder.Services.AddScoped<FakeAuthStateProvider>();
 
 builder.RootComponents.Add<App>("#app");
 

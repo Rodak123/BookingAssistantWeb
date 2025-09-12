@@ -10,6 +10,7 @@
     <h1>Welcome to My App</h1>
     <p>Please log in to continue.</p>
     <button class="btn btn-primary" @onclick="GoToLogin">Log In</button>
+    
     <button @onclick="() => AuthProvider.MarkUserAsLoggedIn()">Login</button>
     <button @onclick="() => AuthProvider.MarkUserAsLoggedOut()">Logout</button>
 </div>
