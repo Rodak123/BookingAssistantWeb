@@ -29,7 +29,7 @@ else
 { 
     @foreach (var phone in phoneNumbers)
     {
-        <NavLink href="@($"/number/{phone.Id}")">@phone.Number</NavLink><br />
+        <NavLink href="@($"/add-number/{phone.Id}")">@phone.Number</NavLink><br />
     }
 }
 
@@ -57,6 +57,6 @@ else
         // Redirect to /number-select page
         var uri = new Uri(NavigationManager.Uri);
         var baseUri = uri.GetLeftPart(UriPartial.Authority);
-        NavigationManager.NavigateTo($"{baseUri}/number-select");
+        NavigationManager.NavigateTo($"{baseUri}/add-number");
     }
 }

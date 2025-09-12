@@ -1,7 +1,8 @@
-@page "/number-select"
+@page "/add-number"
 @using BookingAssistantWeb.Models
 @using BookingAssistantWeb.Services
 @using System.Text.Json
+
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject TokenService TokenService
@@ -9,8 +10,8 @@
 @inject NavigationManager NavigationManager;
 
 
-<PageTitle>Number Select</PageTitle>
-<h1>Number Select</h1>
+<PageTitle>Add Number - Select</PageTitle>
+<h1>Add Number - Select</h1>
 
 @if (phoneNumbers is null)
 {
@@ -20,7 +21,7 @@ else
 {
     @foreach (var phone in phoneNumbers)
     {
-        <NavLink href="@($"/number-select/{phone.Id}")">@phone.Number</NavLink><br/>
+        <NavLink href="@($"/add-number/{phone.Id}")">@phone.Number</NavLink><br/>
     }
 }
 
