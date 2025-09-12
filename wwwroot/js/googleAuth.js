@@ -56,19 +56,31 @@ window.refreshAccessToken = async (apiServer, dotnetHelper) => {
   }
 };
 
-window.fetchApi = async (apiServer, endpoint) => {
+window.fetchApi = async (apiServer, endpoint, { method = "GET", data = null } = {}) => {
   if (!jwtToken) {
     console.warn("Access token missing; call refreshAccessToken from MainLayout first");
     return "Token missing";
   }
 
-  const res = await fetch(`${apiServer}${endpoint}`, {
-    headers: { "Authorization": "Bearer " + jwtToken },
-    credentials: "include"
-  });
+  const options = {
+    method,
+    headers: {
+      "Authorization": "Bearer " + jwtToken,
+    },
+    credentials: "include",
+  };
 
-  if (!res.ok) throw new Error("Failed to fetch secure data");
+  if (data) {
+    options.headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(data);
+  }
 
-  const data = await res.json();
-  return JSON.stringify(data);
+  const res = await fetch(`${apiServer}${endpoint}`, options);
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch secure data: ${res.status} ${res.statusText}`);
+  }
+
+  const responseData = await res.text();
+  return responseData;
 };
