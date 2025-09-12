@@ -56,7 +56,7 @@ window.refreshAccessToken = async (apiServer, dotnetHelper) => {
   }
 };
 
-window.fetchApi = async (apiServer, endpoint, { method = "GET", data = null } = {}) => {
+window.fetchApi = async (apiServer, endpoint, method = "GET", jsonString = null) => {
   if (!jwtToken) {
     console.warn("Access token missing; call refreshAccessToken from MainLayout first");
     return "Token missing";
@@ -70,9 +70,9 @@ window.fetchApi = async (apiServer, endpoint, { method = "GET", data = null } = 
     credentials: "include",
   };
 
-  if (data) {
+  if (jsonString) {
     options.headers["Content-Type"] = "application/json";
-    options.body = JSON.stringify(data);
+    options.body = jsonString;
   }
 
   const res = await fetch(`${apiServer}${endpoint}`, options);
