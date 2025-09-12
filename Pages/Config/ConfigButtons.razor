@@ -1,4 +1,4 @@
-@page "/number-select"
+@page "/number-select/{PhoneId:int}"
 @inject NavigationManager Navigation
 
 <PageTitle>Config Buttons</PageTitle>
@@ -12,9 +12,9 @@
 
 @code {
     [Parameter]
-    public string? PhoneId { get; set; }
+    public int? PhoneId { get; set; }
     private void NavigateWithParam(string message)
     {
-        Navigation.NavigateTo($"/target/{Uri.EscapeDataString(message)}");
+        Navigation.NavigateTo($"/target/{Uri.EscapeDataString(message)}/{PhoneId}");
     }
 }

@@ -1,7 +1,8 @@
-@page "/target/{Message}"
+@page "/target/{Message}/{PhoneId:int}"
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject AppsettingsService AppsettingsService;
+@inject IJSRuntime JS
 
 @using System.Text.Json
 @using BookingAssistantWeb.Services
@@ -10,6 +11,7 @@
 
 <h3>Target Page</h3>
 <p>You received: @Message</p>
+<p>Pro číslo s ID: @PhoneId</p>
 
 <button class="btn btn-primary" @onclick="SaveAndSend">Save & Send Config</button>
 
@@ -19,13 +21,13 @@
     [Parameter]
     public string? Message { get; set; }
     [Parameter]
-    public string? PhoneId { get; set; }
+    public int? PhoneId { get; set; }
 
     private string status = "";
 
     public class ConfigData
     {
-        public string? PhoneId { get; set; }
+        public int? PhoneId { get; set; }
         public string? Message { get; set; }
         public string BookingWindow { get; set; } = string.Empty; // "hh:mm:ss"
         public string BookingMargin { get; set; } = string.Empty;
@@ -39,7 +41,7 @@
         // Fill the object (you can later bind these values from inputs)
         var config = new ConfigData
         {
-            PhoneId = PhoneId ?? "12345",
+            PhoneId = PhoneId ?? 1234,
             Message = Message ?? "Default message",
             BookingWindow = "02:00:00",
             BookingMargin = "00:15:00",
@@ -52,11 +54,11 @@
         string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
         status = $"Serialized JSON:\n{json}";
 
-        // Send JSON to API
-        var response = await Http.PostAsync($"{AppsettingsService.ApiServer}/number/config",
-            new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
+        // Send to API
+        string? data = await JS.InvokeAsync<string>("fetchApi", AppsettingsService.ApiServer, "/number/config", "POST", json);
 
-        if (response.IsSuccessStatusCode)
+
+        if (data != null)
         {
             status = "Saved successfully! Redirecting...";
             await Task.Delay(1000); // small delay so user sees the message
@@ -64,7 +66,7 @@
         }
         else
         {
-            status = $"Error: {response.StatusCode}";
+            status = $"Error: {data}";
         }
     }
 }
