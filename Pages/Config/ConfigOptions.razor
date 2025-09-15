@@ -68,9 +68,9 @@
 
   private class ConfigData
   {
-    public string? BookingWindow { get; set; }
-    public string? BookingMargin { get; set; }
-    public string? BookingInterval { get; set; }
+    public string? BookingWindow { get; set; } = "00:30:00";
+    public string? BookingMargin { get; set; } = "00:15:00";
+    public string? BookingInterval { get; set; } = "00:05:00";
   }
 
   private ConfigData config = new();
