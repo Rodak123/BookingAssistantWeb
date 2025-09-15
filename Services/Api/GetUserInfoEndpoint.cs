@@ -4,12 +4,12 @@ namespace BookingAssistantWeb.Services.Api
 {
     public class GetUserInfoResponse
     {
-        public int? Id { get; set; }
-        public string? GivenName { get; set; }
-        public string? FamilyName { get; set; }
-        public string? Picture { get; set; }
-        public string? Locale { get; set; }
-        public string? Email { get; set; }
+        public int? id { get; set; }
+        public string? givenName { get; set; }
+        public string? familyName { get; set; }
+        public string? picture { get; set; }
+        public string? locale { get; set; }
+        public string? email { get; set; }
     }
 
     public static class GetUserInfoEndpoint
