@@ -15,6 +15,43 @@
 <p>Pro číslo s ID: @PhoneId</p>
 <p>Mód čísla ID: @ModeConfigId</p>
 
+<EditForm Model="config">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+    <label>Booking Window (hh:mm:ss):</label>
+    <input type="text" @bind="config.BookingWindow" />
+    </div>
+
+    <div>
+        <label>Booking Margin (hh:mm:ss):</label>
+        <input type="text" @bind="config.BookingMargin" />
+    </div>
+
+    <div>
+        <label>Booking Interval (hh:mm:ss):</label>
+        <input type="text" @bind="config.BookingInterval" />
+    </div>
+
+    
+
+    <div>
+        <label>Pracovní doba od:</label>
+        <input type="time" @bind="workingHoursStart" />
+    </div>
+
+    <div>
+        <label>Pracovní doba do:</label>
+        <input type="time" @bind="workingHoursEnd" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p style="color:red">@errorMessage</p>
+    }
+</EditForm>
+
 <button class="btn btn-primary" @onclick="SaveAndSend">Přidat číslo</button>
 
 <p>@status</p>
@@ -25,7 +62,63 @@
   [Parameter]
   public int? ModeConfigId { get; set; }
 
-  private string status = "";
+    private string status = "";
+    private string errorMessage = string.Empty;
+
+    private ConfigData config = new();
+
+    // Používáme TimeOnly pro input type="time"
+    private TimeOnly workingHoursStart = new TimeOnly(9, 0); // 09:00
+    private TimeOnly workingHoursEnd = new TimeOnly(17, 0);  // 17:00
+
+    private void Save()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(config.BookingWindow) ||
+                string.IsNullOrWhiteSpace(config.BookingMargin) ||
+                string.IsNullOrWhiteSpace(config.BookingInterval))
+            {
+                errorMessage = "Vyplňte prosím všechna pole.";
+                return;
+            }
+
+            // převod stringů na TimeSpan
+            var window = TimeSpan.Parse(config.BookingWindow);
+            var margin = TimeSpan.Parse(config.BookingMargin);
+            var interval = TimeSpan.Parse(config.BookingInterval);
+
+            if (window <= margin)
+            {
+                errorMessage = "BookingWindow musí být větší než BookingMargin!";
+                return;
+            }
+
+            int windowSeconds = (int)window.TotalSeconds;
+            int marginSeconds = (int)margin.TotalSeconds;
+            int intervalSeconds = (int)interval.TotalSeconds;
+
+            // převod TimeOnly na DateTime (dnešní datum + čas)
+            config.WorkingHoursStart = DateTime.Today.Add(workingHoursStart.ToTimeSpan());
+            config.WorkingHoursEnd = DateTime.Today.Add(workingHoursEnd.ToTimeSpan());
+
+            errorMessage = string.Empty;
+
+            //Console.WriteLine($"BookingWindow: {windowSeconds} sec");
+            //Console.WriteLine($"BookingMargin: {marginSeconds} sec");
+            //Console.WriteLine($"BookingInterval: {intervalSeconds} sec");
+            //Console.WriteLine($"WorkingHoursStart: {config.WorkingHoursStart:HH:mm}");
+            //Console.WriteLine($"WorkingHoursEnd: {config.WorkingHoursEnd:HH:mm}");
+            //Console.WriteLine($"PhoneId: {PhoneId}");
+
+            // tady můžeš poslat na API
+        }
+        catch (FormatException)
+        {
+            errorMessage = "Prosím zadejte hodnoty ve formátu hh:mm:ss a časy ve formátu hh:mm";
+        }
+    }
+
 
   private ApiService? apiService;
   protected override Task OnInitializedAsync()

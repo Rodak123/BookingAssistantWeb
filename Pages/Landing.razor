@@ -11,15 +11,13 @@
     <p>Please log in to continue.</p>
     <button class="btn btn-primary" @onclick="GoToLogin">Log In</button>
     
-    <button @onclick="() => AuthProvider.MarkUserAsLoggedIn()">Login</button>
-    <button @onclick="() => AuthProvider.MarkUserAsLoggedOut()">Logout</button>
 </div>
 
 @code {
     private void GoToLogin()
     {
         // Navigate to login page
-        Navigation.NavigateTo("authentication/login");
+        Navigation.NavigateTo("/home");
     }
 
     [Inject] NavigationManager Navigation { get; set; } = default!;
