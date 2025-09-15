@@ -1,4 +1,4 @@
-@page "/number-select/{PhoneId:int}"
+@page "/add-number/{PhoneId:int}"
 @inject NavigationManager Navigation
 
 <PageTitle>Config Buttons</PageTitle>
@@ -7,14 +7,15 @@
 
 <p>Zadané číslo: @PhoneId</p>
 
-<button class="btn btn-primary" @onclick='() => NavigateWithParam("Hello from Button 1")'>Button 1</button>
-<button class="btn btn-secondary" @onclick='() => NavigateWithParam("Hello from Button 2")'>Button 2</button>   
+<button class="btn btn-primary" @onclick='NavigateWithParam'>Rezervační Systém</button>
+<button class="btn btn-secondary" disabled>Objednávací Systém</button>
 
 @code {
-    [Parameter]
-    public int? PhoneId { get; set; }
-    private void NavigateWithParam(string message)
-    {
-        Navigation.NavigateTo($"/target/{Uri.EscapeDataString(message)}/{PhoneId}");
-    }
+  [Parameter]
+  public int? PhoneId { get; set; }
+  public int? ModeConfigId { get; set; } = 0;
+  private void NavigateWithParam()
+  {
+    Navigation.NavigateTo($"/add-number/{PhoneId}/{ModeConfigId}");
+  }
 }
