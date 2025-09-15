@@ -1,0 +1,32 @@
+
+.landing-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+}
+.welcome-card {
+    background: white;
+    padding: 2rem 3rem;
+    border-radius: 1rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.welcome-card h1 {
+    margin-bottom: 1rem;
+    font-size: 2rem;
+    color: #333;
+}
+
+.welcome-card p {
+    margin-bottom: 1.5rem;
+    color: #666;
+}
+
+.welcome-card .btn {
+    font-size: 1.1rem;
+    padding: 0.6rem 1.5rem;
+    border-radius: 0.5rem;
+}
