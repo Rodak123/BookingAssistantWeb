@@ -1,6 +1,7 @@
 @page "/stripe/success"
 @using BookingAssistantWeb.Services
 @using System.Text.Json
+@using BookingAssistantWeb.Services.Api
 
 @inject AppsettingsService AppsettingsService
 @inject TokenService TokenService
@@ -13,20 +14,14 @@
 <button @onclick="OpenPortal">Open Portal</button>
 
 @code {
-  public class StripePortalSessionData
-  {
-    public string SessionId { get; set; } = "";
-  }
-
-  public class StripePortalSessionResponse
-  {
-    public string sessionUrl { get; set; } = "";
-  }
-
   private string? sessionId;
+
+  private ApiService? apiService;
 
   protected override void OnInitialized()
   {
+    apiService = new(JS, AppsettingsService);
+
     var uri = new Uri(Navigation.Uri);
     var query = uri.Query;
 
@@ -55,39 +50,29 @@
 
   protected async Task CreatePortalSession()
   {
+    if (apiService == null) return;
+
     if (sessionId == null)
     {
       Console.WriteLine("No session ID");
       return;
     }
 
-    StripePortalSessionData data = new()
+    StripeCreatePortalSessionRequest request = new()
     {
-      SessionId = sessionId
+      sessionId = sessionId
     };
 
-    string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+    ApiResponse<StripeCreatePortalSessionResponse> response = await
+    apiService.FetchStripeCreatePortalSessionEndpoint(request);
 
-    var responseJson = await JS.InvokeAsync<string>(
-    "fetchApi", AppsettingsService.ApiServer,
-    "/stripe/create-portal-session", "POST", json
-    );
-
-    if (string.IsNullOrEmpty(responseJson))
+    if (!response.Success)
     {
-      Console.WriteLine("Failed to create portal session");
+      Console.WriteLine($"Failed to create portal session: {response.ErrorMessage}, {response.StatusCode}");
       return;
     }
 
-    StripePortalSessionResponse response = JsonSerializer.Deserialize<StripePortalSessionResponse>(responseJson)!;
-
-    if (response == null)
-    {
-      Console.WriteLine("Failed to deserialize portal session response");
-      return;
-    }
-
-    Console.WriteLine(response.sessionUrl);
-    await JS.InvokeVoidAsync("eval", $"window.location.href='{response.sessionUrl}';");
+    Console.WriteLine(response.Data!.sessionUrl);
+    await JS.InvokeVoidAsync("eval", $"window.location.href='{response.Data!.sessionUrl}';");
   }
 }

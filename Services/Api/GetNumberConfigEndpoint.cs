@@ -5,7 +5,7 @@ namespace BookingAssistantWeb.Services.Api
 {
     public class GetNumberConfigRequest
     {
-        public int configId { get; set; }
+        public int numberConfigId { get; set; }
     }
 
     public class GetNumberConfigResponse

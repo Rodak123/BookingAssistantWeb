@@ -1,6 +1,7 @@
 @page "/stripe"
 @using BookingAssistantWeb.Services
 @using System.Text.Json
+@using BookingAssistantWeb.Services.Api
 
 @inject AppsettingsService AppsettingsService
 @inject TokenService TokenService
@@ -12,14 +13,12 @@
 <button @onclick="Checkout">Checkout</button>
 
 @code {
-  public class StripeCheckoutSessionData
-  {
-    public string LookupKey { get; set; } = "basic_plan";
-  }
 
-  public class StripeCheckoutSessionResponse
+  private ApiService? apiService;
+
+  protected override void OnInitialized()
   {
-    public string sessionUrl { get; set; } = "";
+    apiService = new(JS, AppsettingsService);
   }
 
   private async Task Checkout()
@@ -29,33 +28,23 @@
 
   protected async Task CreateCheckoutSession()
   {
-    StripeCheckoutSessionData data = new()
+    if (apiService == null) return;
+
+    StripeCreateChekoutSessionRequest request = new()
     {
-      LookupKey = "basic_plan"
+      lookupKey = "basic_plan"
     };
 
-    string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+    ApiResponse<StripeCreateChekoutSessionResponse> response = await
+    apiService.FetchStripeCreateChekoutSessionEndpoint(request);
 
-    var responseJson = await JS.InvokeAsync<string>(
-    "fetchApi", AppsettingsService.ApiServer,
-    "/stripe/create-checkout-session", "POST", json
-    );
-
-    if (string.IsNullOrEmpty(responseJson))
+    if (!response.Success)
     {
-      Console.WriteLine("Failed to create checkout session");
+      Console.WriteLine($"Failed to create checkout session: {response.ErrorMessage}, {response.StatusCode}");
       return;
     }
 
-    StripeCheckoutSessionResponse response = JsonSerializer.Deserialize<StripeCheckoutSessionResponse>(responseJson)!;
-
-    if (response == null)
-    {
-      Console.WriteLine("Failed to deserialize checkout session response");
-      return;
-    }
-
-    Console.WriteLine(response.sessionUrl);
-    await JS.InvokeVoidAsync("eval", $"window.location.href='{response.sessionUrl}';");
+    Console.WriteLine(response.Data!.sessionUrl);
+    await JS.InvokeVoidAsync("eval", $"window.location.href='{response.Data!.sessionUrl}';");
   }
 }
