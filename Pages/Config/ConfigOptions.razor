@@ -80,6 +80,10 @@
   private TimeSpan BookingMargin;
   private TimeSpan BookingInterval;
 
+  private TimeOnly workingHoursStart;
+  private TimeOnly workingHoursEnd;
+
+
   protected override Task OnInitializedAsync()
   {
     apiService = new(JS, AppsettingsService);
