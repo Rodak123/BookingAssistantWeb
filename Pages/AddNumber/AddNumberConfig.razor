@@ -52,7 +52,7 @@
     }
 </EditForm>
 
-<button class="btn btn-primary" @onclick="SaveAndSend">Přidat číslo</button>
+<button class="btn btn-primary" @onclick="SaveAndPay">Přidat číslo a Zaplatit</button>
 
 <p>@status</p>
 
@@ -129,7 +129,7 @@
         }
     }
 
-    private async Task SaveAndSend()
+    private async Task SaveAndPay()
     {
         if (apiService == null) return;
 
@@ -163,12 +163,42 @@
         if (addNumberResponse.Success)
         {
             status = "Saved successfully! Redirecting...";
-            Navigation.NavigateTo("/add-number/success");
+            await Pay();
         }
         else
         {
             Console.WriteLine($"Failed to add number: {addNumberResponse.ErrorMessage}, {addNumberResponse.StatusCode}");
             status = $"Error: {addNumberResponse.ErrorMessage}, {addNumberResponse.StatusCode}";
         }
+    }
+
+    private async Task Pay()
+    {
+        string? sessionUrl = await CreateCheckoutSession();
+
+        if (sessionUrl == null) return;
+
+        await JS.InvokeVoidAsync("eval", $"window.location.href='{sessionUrl}';");
+    }
+
+    private async Task<string?> CreateCheckoutSession()
+    {
+        if (apiService == null) return null;
+
+        StripeCreateChekoutSessionRequest request = new()
+        {
+            lookupKey = "basic_plan"
+        };
+
+        ApiResponse<StripeCreateChekoutSessionResponse> response = await
+        apiService.FetchStripeCreateChekoutSessionEndpoint(request);
+
+        if (!response.Success)
+        {
+            Console.WriteLine($"Failed to create checkout session: {response.ErrorMessage}, {response.StatusCode}");
+            return null;
+        }
+
+        return response.Data!.sessionUrl;
     }
 }
