@@ -26,15 +26,4 @@ public class FakeAuthStateProvider : AuthenticationStateProvider
         return Task.FromResult(new AuthenticationState(user));
     }
 
-    public void MarkUserAsLoggedIn()
-    {
-        _isLoggedIn = true;
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-    }
-
-    public void MarkUserAsLoggedOut()
-    {
-        _isLoggedIn = false;
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-    }
 }
