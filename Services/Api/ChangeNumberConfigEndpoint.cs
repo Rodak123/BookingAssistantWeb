@@ -18,7 +18,7 @@ namespace BookingAssistantWeb.Services.Api
 
     public static class ChangeNumberConfigEndpoint
     {
-        public static async Task<ApiResponse<ChangeNumberConfigResponse>> FetchAddNumberConfigEndpoint(this ApiService apiService, ChangeNumberConfigRequest request)
+        public static async Task<ApiResponse<ChangeNumberConfigResponse>> FetchChangeNumberConfigEndpoint(this ApiService apiService, ChangeNumberConfigRequest request)
         {
             string requestJson = JsonSerializer.Serialize(request);
             JsApiResponse? jsResponse = await apiService.FetchApiPost("/config/change", requestJson);

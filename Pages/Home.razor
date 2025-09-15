@@ -15,52 +15,74 @@
 
 @if (phoneNumbers is null)
 {
-  <p>Načítám...</p>
+<p>Načítám...</p>
 }
 else
 {
-  <p>Count: @phoneNumbers.Count</p>
-  @foreach (var phone in phoneNumbers)
-  {
+<p>Count: @phoneNumbers.Count</p>
+@foreach (var phone in phoneNumbers)
+{
     <NavLink href="@($"/change/{phone.id}")">@phone.number</NavLink>
 
     <br />
-  }
+}
 }
 
 <button @onclick="RedirectAddNumber">Přidat číslo</button>
 
 @code {
-  List<PhoneNumber>? phoneNumbers;
+    List<PhoneNumber>? phoneNumbers;
 
-  private ApiService? apiService;
+    private ApiService? apiService;
 
-  protected override async Task OnInitializedAsync()
-  {
-    apiService = new(JS, AppsettingsService);
-    await LoadNumbers();
-  }
-
-  private async Task LoadNumbers()
-  {
-    if (apiService == null) return;
-
-    ApiResponse<GetUserNumbersResponse> response = await apiService.FetchGetUserNumbersEndpoint();
-
-    if (!response.Success)
+    protected override async Task OnInitializedAsync()
     {
-      Console.WriteLine($"Failed to load numbers: {response.ErrorMessage}, {response.StatusCode}");
-      return;
+        apiService = new(JS, AppsettingsService);
+        await LoadNumberAssignments();
     }
 
-    phoneNumbers = response.Data!.phoneNumbers;
-    StateHasChanged();
-  }
+    private async Task LoadNumberAssignments()
+    {
+        if (apiService == null) return;
 
-  private void RedirectAddNumber()
-  {
-    var uri = new Uri(NavigationManager.Uri);
-    var baseUri = uri.GetLeftPart(UriPartial.Authority);
-    NavigationManager.NavigateTo($"{baseUri}/add-number");
-  }
+        ApiResponse<GetUserNumberAssignmentsResponse> numberAssignmentsResponse = await apiService.FetchGetUserNumberAssignmentsEndpoint();
+
+        if (!numberAssignmentsResponse.Success)
+        {
+            Console.WriteLine($"Failed to load number assignments: {numberAssignmentsResponse.ErrorMessage}, {numberAssignmentsResponse.StatusCode}");
+            return;
+        }
+
+        phoneNumbers = new();
+        foreach (var assignment in numberAssignmentsResponse.Data!.phoneNumbersAssignments)
+        {
+            GetNumberRequest getNumberRequest = new(){
+                phoneNumberId = assignment.phoneNumberId
+            };
+
+            ApiResponse<GetNumberResponse> numberResponse = await apiService.FetchGetNumberEndpoint(getNumberRequest);
+
+            if(!numberResponse.Success) {
+                Console.WriteLine($"Failed to load number: {numberResponse.ErrorMessage}, {numberResponse.StatusCode}");
+                return;
+            }
+
+            PhoneNumber? phoneNumber = numberResponse.Data!.phoneNumber;
+
+            if(phoneNumber == null) {
+                Console.WriteLine($"Null number");
+                continue;
+            }
+
+            phoneNumbers.Add(phoneNumber);
+        }
+        StateHasChanged();
+    }
+
+    private void RedirectAddNumber()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var baseUri = uri.GetLeftPart(UriPartial.Authority);
+        NavigationManager.NavigateTo($"{baseUri}/add-number");
+    }
 }

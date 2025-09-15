@@ -15,7 +15,7 @@ namespace BookingAssistantWeb.Services.Api
 
     public static class GetNumberEndpoint
     {
-        public static async Task<ApiResponse<GetNumberResponse>> FetchAddNumberConfigEndpoint(this ApiService apiService, GetNumberRequest request)
+        public static async Task<ApiResponse<GetNumberResponse>> FetchGetNumberEndpoint(this ApiService apiService, GetNumberRequest request)
         {
             string requestJson = JsonSerializer.Serialize(request);
             JsApiResponse? jsResponse = await apiService.FetchApiPost("/number", requestJson);
