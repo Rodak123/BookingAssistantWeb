@@ -1,4 +1,4 @@
-@page "/configure/{PhoneId:int}"
+@page "/add-number/{PhoneId:int}/{ModeConfigId:int}"
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject AppsettingsService AppsettingsService;
@@ -6,62 +6,72 @@
 
 @using System.Text.Json
 @using BookingAssistantWeb.Services
+@using BookingAssistantWeb.Services.Api
 
-<PageTitle>Konfigurace možností</PageTitle>
+<PageTitle>Nastavení čísla</PageTitle>
 
-<h3>Target Page</h3>
+<h3>Nastavení čísla</h3>
 
 <p>Pro číslo s ID: @PhoneId</p>
+<p>Mód čísla ID: @ModeConfigId</p>
 
-<button class="btn btn-primary" @onclick="SaveAndSend">Save & Send Config</button>
+<button class="btn btn-primary" @onclick="SaveAndSend">Přidat číslo</button>
 
 <p>@status</p>
 
 @code {
-    [Parameter]
-    public int? PhoneId { get; set; }
+  [Parameter]
+  public int? PhoneId { get; set; }
+  [Parameter]
+  public int? ModeConfigId { get; set; }
 
-    private string status = "";
+  private string status = "";
 
-    public class ConfigData
+  private ApiService? apiService;
+  protected override Task OnInitializedAsync()
+  {
+    apiService = new(JS, AppsettingsService);
+
+    return Task.CompletedTask;
+  }
+
+  private async Task SaveAndSend()
+  {
+    if (apiService == null) return;
+
+    AddNumberConfigRequest numberConfigRequest = new()
     {
-        public int? PhoneId { get; set; }
-        public string BookingWindow { get; set; } = string.Empty; // "hh:mm:ss"
-        public string BookingMargin { get; set; } = string.Empty;
-        public string BookingInterval { get; set; } = string.Empty;
-        public string WorkingHoursStart { get; set; } = string.Empty; // "HH:mm"
-        public string WorkingHoursEnd { get; set; } = string.Empty;
-    }
+      BookingWindowSeconds = 14 * 24 * 60 * 60,
+      BookingMarginSeconds = 1 * 60 * 60,
+      BookingIntervalSeconds = 1 * 60 * 60,
+    };
 
-    private async Task SaveAndSend()
+    ApiResponse<AddNumberConfigResponse> numberConfigResponse = await
+    apiService.FetchAddNumberConfigEndpoint(numberConfigRequest);
+
+    if (!numberConfigResponse.Success)
     {
-        // Fill the object (you can later bind these values from inputs)
-        var config = new ConfigData
-        {
-            PhoneId = PhoneId ?? 1234,
-            BookingWindow = "02:00:00",
-            BookingMargin = "00:15:00",
-            BookingInterval = "00:30:00",
-            WorkingHoursStart = "09:00",
-            WorkingHoursEnd = "17:00"
-        };
-
-        // Convert to JSON
-        string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-        status = $"Serialized JSON:\n{json}";
-
-        // Send to API
-        string? data = await JS.InvokeAsync<string>("fetchApi", AppsettingsService.ApiServer, "/number/config", "POST", json);
-
-
-        if (data != null)
-        {
-            status = "Saved successfully! Redirecting...";
-            
-        }
-        else
-        {
-            status = $"Error: {data}";
-        }
+      Console.WriteLine($"Failed to add config: {numberConfigResponse.ErrorMessage}, {numberConfigResponse.StatusCode}");
+      return;
     }
+    Console.WriteLine($"Add config: {numberConfigResponse.Data?.configId}, {numberConfigResponse.StatusCode}");
+
+    AddNumberRequest addNumberRequest = new()
+    {
+      ConfigId = numberConfigResponse.Data!.configId,
+      PhoneId = PhoneId ?? 0
+    };
+
+    ApiResponse<AddNumberResponse> addNumberResponse = await apiService.FetchAddNumberEndpoint(addNumberRequest);
+
+    if (addNumberResponse.Success)
+    {
+      status = "Saved successfully! Redirecting...";
+    }
+    else
+    {
+      Console.WriteLine($"Failed to add number: {addNumberResponse.ErrorMessage}, {addNumberResponse.StatusCode}");
+      status = $"Error: {addNumberResponse.ErrorMessage}, {addNumberResponse.StatusCode}";
+    }
+  }
 }

@@ -7,14 +7,15 @@
 
 <p>Zadané číslo: @PhoneId</p>
 
-<button class="btn btn-primary" @onclick='NavigateWithParam'>Button 1</button>
-<button class="btn btn-secondary" @onclick='NavigateWithParam'>Button 2</button>
+<button class="btn btn-primary" @onclick='NavigateWithParam'>Rezervační Systém</button>
+<button class="btn btn-secondary" disabled>Objednávací Systém</button>
 
 @code {
-    [Parameter]
-    public int? PhoneId { get; set; }
-    private void NavigateWithParam()
-    {
-        Navigation.NavigateTo($"/configure/{PhoneId}");
-    }
+  [Parameter]
+  public int? PhoneId { get; set; }
+  public int? ModeConfigId { get; set; } = 0;
+  private void NavigateWithParam()
+  {
+    Navigation.NavigateTo($"/add-number/{PhoneId}/{ModeConfigId}");
+  }
 }
