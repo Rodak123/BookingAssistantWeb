@@ -21,8 +21,7 @@
 }
 else
 {
-
-    <p>Číšlo - @phoneNumberAssignment?.phoneNumberId</p>
+    <p>Číšlo - @phoneNumber?.number</p>
 
     <EditForm Model="config">
         <DataAnnotationsValidator />
@@ -67,6 +66,7 @@ else
 @code {
     private string? sessionId = null;
     private PhoneNumberAssignment? phoneNumberAssignment;
+    private PhoneNumber? phoneNumber;
 
     private string status = "";
     private string errorMessage = string.Empty;
@@ -140,7 +140,21 @@ else
         phoneNumberAssignment = response.Data!.phoneNumberAssignment;
         StateHasChanged();
 
-        return phoneNumberAssignment != null;
+        if (phoneNumberAssignment == null)
+            return false;
+
+        GetNumberRequest getNumberRequest = new()
+        {
+            phoneNumberId = phoneNumberAssignment.phoneNumberId
+        };
+        ApiResponse<GetNumberResponse> getNumberResponse = await apiService.FetchGetNumberEndpoint(getNumberRequest);
+
+        phoneNumber = getNumberResponse.Data!.phoneNumber;
+
+        if (phoneNumber == null)
+            return false;
+
+        return true;
     }
 
     private bool Validate()
