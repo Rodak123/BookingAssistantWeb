@@ -134,6 +134,8 @@
   {
     if (apiService == null) return;
 
+    if (!Validate()) return;
+
     AddNumberConfigRequest numberConfigRequest = new()
     {
       BookingWindowSeconds = (int)Math.Floor(BookingWindow.TotalSeconds),
@@ -162,6 +164,7 @@
     if (addNumberResponse.Success)
     {
       status = "Saved successfully! Redirecting...";
+      Navigation.NavigateTo("/success");
     }
     else
     {
