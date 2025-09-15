@@ -11,11 +11,11 @@
 <button class="btn btn-secondary" disabled>Objednávací Systém</button>
 
 @code {
-  [Parameter]
-  public int? PhoneId { get; set; }
-  public int? ModeConfigId { get; set; } = 0;
-  private void NavigateWithParam()
-  {
-    Navigation.NavigateTo($"/add-number/{PhoneId}/{ModeConfigId}");
-  }
+    [Parameter]
+    public int? PhoneId { get; set; }
+    public int? ModeConfigId { get; set; } = 0;
+    private void NavigateWithParam()
+    {
+        Navigation.NavigateTo($"/add-number/{PhoneId}/{ModeConfigId}");
+    }
 }
