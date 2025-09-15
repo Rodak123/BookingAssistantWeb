@@ -1,14 +1,18 @@
-﻿
-<CascadingAuthenticationState>
+﻿<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(LandingLayout)" />
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <!-- If not logged in, override with LandingLayout -->
+                    <LayoutView Layout="@typeof(LandingLayout)">
+                    <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+                    </LayoutView>
+                </NotAuthorized>
+            </AuthorizeRouteView>
         </Found>
         <NotFound>
-            <PageTitle>Not found</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Sorry, there's nothing at this address.</p>
+                <p>Sorry, nothing found.</p>
             </LayoutView>
         </NotFound>
     </Router>
