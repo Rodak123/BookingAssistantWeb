@@ -1,10 +1,11 @@
 using System.Text.Json;
 
-namespace BookingAssistantWeb.Services.Api
+namespace BookingAssistantWeb.Services.Api.Endpoints.Stripe
 {
     public class StripeCreatePortalSessionRequest
     {
         public string sessionId { get; set; } = "";
+        public string? returnUrl { get; set; }
     }
 
     public class StripeCreatePortalSessionResponse

@@ -3,58 +3,25 @@
 @using BookingAssistantWeb.Services
 @using System.Text.Json
 @using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints
 
-@inject HttpClient Http
-@inject IJSRuntime JS
-@inject TokenService TokenService
-@inject AppsettingsService AppsettingsService;
-@inject NavigationManager NavigationManager;
+@inject NavigationManager Navigation;
 
+<PageTitle>Přidat číslo</PageTitle>
+<h1>Přidat číslo</h1>
 
-<PageTitle>Add Number - Select</PageTitle>
-<h1>Add Number - Select</h1>
+<ol>
+    <li>Výběr plánu</li>
+    <li>Platba</li>
+    <li>Konfigurace</li>
+</ol>
 
-@if (phoneNumbers is null)
-{
-    <p>Načítám...</p>
-}
-else
-{
-    <p>Count: @phoneNumbers.Count</p>
-    @foreach (var phone in phoneNumbers)
-    {
-        <NavLink href="@($"/add-number/{phone.id}")">@phone.number</NavLink>
-
-        <br />
-    }
-}
+<button class="btn btn-primary" @onclick='() => Next("basic_plan")'>Rezervační Systém - 300kč/měsíc</button>
+<button class="btn btn-secondary" disabled>Objednávací Systém (již brzy)</button>
 
 @code {
-    List<PhoneNumber>? phoneNumbers;
-
-
-    private ApiService? apiService;
-
-    protected override async Task OnInitializedAsync()
+    private void Next(string mode)
     {
-        apiService = new(JS, AppsettingsService);
-        await LoadNumbers();
+        Navigation.NavigateTo($"/add-number/{mode}");
     }
-
-    private async Task LoadNumbers()
-    {
-        if (apiService == null) return;
-
-        ApiResponse<GetFreeNumbersResponse> response = await apiService.FetchGetFreeNumbersEndpoint();
-
-        if (!response.Success)
-        {
-            Console.WriteLine($"Failed to load numbers: {response.ErrorMessage}, {response.StatusCode}");
-            return;
-        }
-
-        phoneNumbers = response.Data!.phoneNumbers;
-        StateHasChanged();
-    }
-
 }

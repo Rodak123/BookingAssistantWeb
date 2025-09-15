@@ -1,67 +1,72 @@
-@page "/add-number/{PhoneId:int}/{ModeConfigId:int}"
+@page "/add-number/paid"
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject AppsettingsService AppsettingsService;
 @inject IJSRuntime JS
 
 @using System.Text.Json
+@using BookingAssistantWeb.Models
 @using BookingAssistantWeb.Services
 @using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints
+@using BookingAssistantWeb.Services.Api.Endpoints.Stripe
 
-<PageTitle>Nastavení čísla</PageTitle>
+<PageTitle>Přidat číslo - Konfigurace</PageTitle>
 
-<h3>Nastavení čísla</h3>
+<h3>Přidat číslo - Konfigurace</h3>
 
-<p>Pro číslo s ID: @PhoneId</p>
-<p>Mód čísla ID: @ModeConfigId</p>
+@if (phoneNumberAssignment == null)
+{
+    <p>Načítám</p>
+}
+else
+{
 
-<EditForm Model="config">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+    <p>Číšlo - @phoneNumberAssignment?.phoneNumberId</p>
 
-    <div>
-        <label>Booking Window (hh:mm:ss):</label>
-        <input type="text" @bind="config.BookingWindow" />
-    </div>
+    <EditForm Model="config">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <div>
-        <label>Booking Margin (hh:mm:ss):</label>
-        <input type="text" @bind="config.BookingMargin" />
-    </div>
+        <div>
+            <label>Booking Window (hh:mm:ss):</label>
+            <input type="text" @bind="config.BookingWindow" />
+        </div>
 
-    <div>
-        <label>Booking Interval (hh:mm:ss):</label>
-        <input type="text" @bind="config.BookingInterval" />
-    </div>
+        <div>
+            <label>Booking Margin (hh:mm:ss):</label>
+            <input type="text" @bind="config.BookingMargin" />
+        </div>
 
+        <div>
+            <label>Booking Interval (hh:mm:ss):</label>
+            <input type="text" @bind="config.BookingInterval" />
+        </div>
 
+        <div>
+            <label>Pracovní doba od:</label>
+            <input type="time" @bind="workingHoursStart" />
+        </div>
 
-    <div>
-        <label>Pracovní doba od:</label>
-        <input type="time" @bind="workingHoursStart" />
-    </div>
+        <div>
+            <label>Pracovní doba do:</label>
+            <input type="time" @bind="workingHoursEnd" />
+        </div>
 
-    <div>
-        <label>Pracovní doba do:</label>
-        <input type="time" @bind="workingHoursEnd" />
-    </div>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p style="color:red">@errorMessage</p>
+        }
+    </EditForm>
 
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <p style="color:red">@errorMessage</p>
-    }
-</EditForm>
+    <button class="btn btn-primary" @onclick="Save">Uložit</button>
 
-<button class="btn btn-primary" @onclick="SaveAndPay">Přidat číslo a Zaplatit</button>
-
-<p>@status</p>
+    <p>@status</p>
+}
 
 @code {
-    [Parameter]
-    public int? PhoneId { get; set; }
-    [Parameter]
-    public int? ModeConfigId { get; set; }
-
+    private string? sessionId = null;
+    private PhoneNumberAssignment? phoneNumberAssignment;
 
     private string status = "";
     private string errorMessage = string.Empty;
@@ -83,11 +88,59 @@
     private TimeOnly workingHoursEnd;
 
     private ApiService? apiService;
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         apiService = new(JS, AppsettingsService);
 
-        return Task.CompletedTask;
+        var uri = new Uri(Navigation.Uri);
+        var query = uri.Query;
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            var queryString = query.TrimStart('?');
+            var parameters = queryString.Split('&', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var param in parameters)
+            {
+                var kv = param.Split('=', 2);
+                if (kv.Length == 2 && kv[0] == "session_id")
+                {
+                    sessionId = Uri.UnescapeDataString(kv[1]);
+                    break;
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(sessionId))
+        {
+            Navigation.NavigateTo("/add-number");
+        }
+
+        if (!await LoadAddedNumber())
+        {
+            Navigation.NavigateTo("/add-number");
+        }
+    }
+
+    private async Task<bool> LoadAddedNumber()
+    {
+        if (apiService == null || sessionId == null) return false;
+
+        StripeGetPurchasedAssignmentRequest request = new()
+        {
+            sessionId = sessionId
+        };
+
+        ApiResponse<StripeGetPurchasedAssignmentResponse> response = await
+        apiService.FetchStripeGetPurchasedAssignmentEndpoint(request);
+
+        if (!response.Success)
+            return false;
+
+        phoneNumberAssignment = response.Data!.phoneNumberAssignment;
+        StateHasChanged();
+
+        return phoneNumberAssignment != null;
     }
 
     private bool Validate()
@@ -129,76 +182,31 @@
         }
     }
 
-    private async Task SaveAndPay()
+    private async Task Save()
     {
-        if (apiService == null) return;
+        if (apiService == null || phoneNumberAssignment == null || sessionId == null) return;
+        errorMessage = "";
 
         if (!Validate()) return;
 
-        AddNumberConfigRequest numberConfigRequest = new()
+        ChangeNumberConfigRequest numberConfigRequest = new()
         {
+            configId = phoneNumberAssignment.phoneNumberConfigId,
             bookingWindowSeconds = (int)Math.Floor(BookingWindow.TotalSeconds),
             bookingMarginSeconds = (int)Math.Floor(BookingMargin.TotalSeconds),
             bookingIntervalSeconds = (int)Math.Floor(BookingInterval.TotalSeconds),
         };
 
-        ApiResponse<AddNumberConfigResponse> numberConfigResponse = await
-        apiService.FetchAddNumberConfigEndpoint(numberConfigRequest);
+        ApiResponse<ChangeNumberConfigResponse> numberConfigResponse = await
+        apiService.FetchChangeNumberConfigEndpoint(numberConfigRequest);
 
         if (!numberConfigResponse.Success)
         {
-            Console.WriteLine($"Failed to add config: {numberConfigResponse.ErrorMessage}, {numberConfigResponse.StatusCode}");
+            Console.WriteLine($"Failed to change config: {numberConfigResponse.ErrorMessage}, {numberConfigResponse.StatusCode}");
+            errorMessage = numberConfigResponse.ErrorMessage ?? "Failed";
             return;
         }
-        Console.WriteLine($"Add config: {numberConfigResponse.Data?.configId}, {numberConfigResponse.StatusCode}");
 
-        AddNumberRequest addNumberRequest = new()
-        {
-            configId = numberConfigResponse.Data!.configId,
-            phoneId = PhoneId ?? 0
-        };
-
-        ApiResponse<AddNumberResponse> addNumberResponse = await apiService.FetchAddNumberEndpoint(addNumberRequest);
-
-        if (addNumberResponse.Success)
-        {
-            status = "Saved successfully! Redirecting...";
-            await Pay();
-        }
-        else
-        {
-            Console.WriteLine($"Failed to add number: {addNumberResponse.ErrorMessage}, {addNumberResponse.StatusCode}");
-            status = $"Error: {addNumberResponse.ErrorMessage}, {addNumberResponse.StatusCode}";
-        }
-    }
-
-    private async Task Pay()
-    {
-        string? sessionUrl = await CreateCheckoutSession();
-
-        if (sessionUrl == null) return;
-
-        await JS.InvokeVoidAsync("eval", $"window.location.href='{sessionUrl}';");
-    }
-
-    private async Task<string?> CreateCheckoutSession()
-    {
-        if (apiService == null) return null;
-
-        StripeCreateChekoutSessionRequest request = new()
-        {
-            lookupKey = "basic_plan"
-        };
-
-        ApiResponse<StripeCreateChekoutSessionResponse> response = await
-        apiService.FetchStripeCreateChekoutSessionEndpoint(request);
-
-        if (!response.Success)
-        {
-            Console.WriteLine($"Failed to create checkout session: {response.ErrorMessage}, {response.StatusCode}");
-            return null;
-        }
-
-        return response.Data!.sessionUrl;
+        Navigation.NavigateTo("/home");
     }
 }

@@ -1,0 +1,66 @@
+@page "/add-number/{Mode}"
+@using BookingAssistantWeb.Models
+@using BookingAssistantWeb.Services
+@using System.Text.Json
+@using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints
+@using BookingAssistantWeb.Services.Api.Endpoints.Stripe
+
+@inject NavigationManager Navigation;
+@inject AppsettingsService AppsettingsService;
+@inject IJSRuntime JS
+
+<PageTitle>Přidat číslo - Platba</PageTitle>
+<h1>Přidat číslo - Platba</h1>
+
+<ol>
+    <li>Výběr plánu -> @Mode</li>
+    <li>Platba</li>
+    <li>Konfigurace</li>
+</ol>
+
+<p>Rezervační Systém - 300kč/měsíc</p>
+<button @onclick="Pay">Zaplatit</button>
+
+@code {
+    [Parameter]
+    public string? Mode { get; set; } = string.Empty;
+
+    private ApiService? apiService;
+    protected override void OnInitialized()
+    {
+        apiService = new(JS, AppsettingsService);
+    }
+
+    private async Task Pay()
+    {
+        string? sessionUrl = await CreateCheckoutSession();
+
+        if (sessionUrl == null) return;
+
+        await JS.InvokeVoidAsync("eval", $"window.location.href='{sessionUrl}';");
+    }
+
+    private async Task<string?> CreateCheckoutSession()
+    {
+        if (apiService == null) return null;
+
+        StripeCreateChekoutSessionRequest request = new()
+        {
+            lookupKey = "basic_plan",
+            successUrl = $"{Navigation.BaseUri}add-number/paid?session_id={{CHECKOUT_SESSION_ID}}",
+            cancelUrl = $"{Navigation.BaseUri}home",
+        };
+
+        ApiResponse<StripeCreateChekoutSessionResponse> response = await
+        apiService.FetchStripeCreateChekoutSessionEndpoint(request);
+
+        if (!response.Success)
+        {
+            Console.WriteLine($"Failed to create checkout session: {response.ErrorMessage}, {response.StatusCode}");
+            return null;
+        }
+
+        return response.Data!.sessionUrl;
+    }
+}

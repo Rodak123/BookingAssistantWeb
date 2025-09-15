@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BookingAssistantWeb.Services.Api
+namespace BookingAssistantWeb.Services.Api.Endpoints
 {
     public class ChangeNumberConfigRequest
     {

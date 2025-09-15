@@ -1,15 +1,11 @@
 using System.Text.Json;
+using BookingAssistantWeb.Models;
 
-namespace BookingAssistantWeb.Services.Api
+namespace BookingAssistantWeb.Services.Api.Endpoints
 {
     public class GetUserInfoResponse
     {
-        public int? id { get; set; }
-        public string? givenName { get; set; }
-        public string? familyName { get; set; }
-        public string? picture { get; set; }
-        public string? locale { get; set; }
-        public string? email { get; set; }
+        public User? user { get; set; }
     }
 
     public static class GetUserInfoEndpoint

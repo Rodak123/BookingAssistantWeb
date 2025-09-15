@@ -1,10 +1,12 @@
 using System.Text.Json;
 
-namespace BookingAssistantWeb.Services.Api
+namespace BookingAssistantWeb.Services.Api.Endpoints.Stripe
 {
     public class StripeCreateChekoutSessionRequest
     {
         public string lookupKey { get; set; } = "basic_plan";
+        public string? successUrl { get; set; }
+        public string? cancelUrl { get; set; }
     }
 
     public class StripeCreateChekoutSessionResponse

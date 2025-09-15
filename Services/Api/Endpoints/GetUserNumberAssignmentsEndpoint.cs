@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BookingAssistantWeb.Models;
 
-namespace BookingAssistantWeb.Services.Api
+namespace BookingAssistantWeb.Services.Api.Endpoints
 {
     public class GetUserNumberAssignmentsResponse
     {
