@@ -5,8 +5,8 @@ namespace BookingAssistantWeb.Services.Api
 {
     public class AddNumberRequest
     {
-        public int PhoneId { get; set; }
-        public int ConfigId { get; set; }
+        public int phoneId { get; set; }
+        public int configId { get; set; }
     }
 
     public class AddNumberResponse

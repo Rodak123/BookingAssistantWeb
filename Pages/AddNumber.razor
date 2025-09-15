@@ -2,6 +2,7 @@
 @using BookingAssistantWeb.Models
 @using BookingAssistantWeb.Services
 @using System.Text.Json
+@using BookingAssistantWeb.Services.Api
 
 @inject HttpClient Http
 @inject IJSRuntime JS
@@ -15,29 +16,45 @@
 
 @if (phoneNumbers is null)
 {
-    <p>Načítám...</p>
+  <p>Načítám...</p>
 }
 else
 {
-    @foreach (var phone in phoneNumbers)
-    {
-        <NavLink href="@($"/add-number/{phone.Id}")">@phone.Number</NavLink><br/>
-    }
+  <p>Count: @phoneNumbers.Count</p>
+  @foreach (var phone in phoneNumbers)
+  {
+    <NavLink href="@($"/add-number/{phone.id}")">@phone.number</NavLink>
+
+    <br />
+  }
 }
 
 @code {
-    List<PhoneNumber>? phoneNumbers;
+  List<PhoneNumber>? phoneNumbers;
 
-    protected override async Task OnInitializedAsync()
+
+  private ApiService? apiService;
+
+  protected override async Task OnInitializedAsync()
+  {
+    apiService = new(JS, AppsettingsService);
+    await LoadNumbers();
+  }
+
+  private async Task LoadNumbers()
+  {
+    if (apiService == null) return;
+
+    ApiResponse<GetFreeNumbersResponse> response = await apiService.FetchGetFreeNumbersEndpoint();
+
+    if (!response.Success)
     {
-        var response = await JS.InvokeAsync<string>("fetchApi", AppsettingsService.ApiServer, "/numbers/free");
-        //Console.WriteLine($"Response from /numbers/free: {response}");
-
-        if (!string.IsNullOrEmpty(response))
-        {
-            var result = JsonSerializer.Deserialize<PhoneNumbersResponse>(response, 
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            phoneNumbers = result?.PhoneNumbers;
-        }
+      Console.WriteLine($"Failed to load numbers: {response.ErrorMessage}, {response.StatusCode}");
+      return;
     }
+
+    phoneNumbers = response.Data!.phoneNumbers;
+    StateHasChanged();
+  }
+
 }

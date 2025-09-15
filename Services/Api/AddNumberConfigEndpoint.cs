@@ -4,9 +4,9 @@ namespace BookingAssistantWeb.Services.Api
 {
     public class AddNumberConfigRequest
     {
-        public int BookingWindowSeconds { get; set; }
-        public int BookingMarginSeconds { get; set; }
-        public int BookingIntervalSeconds { get; set; }
+        public int bookingWindowSeconds { get; set; }
+        public int bookingMarginSeconds { get; set; }
+        public int bookingIntervalSeconds { get; set; }
     }
 
     public class AddNumberConfigResponse

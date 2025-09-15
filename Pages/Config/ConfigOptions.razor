@@ -62,7 +62,6 @@
   [Parameter]
   public int? ModeConfigId { get; set; }
 
-  private ApiService? apiService;
 
   private string status = "";
   private string errorMessage = string.Empty;
@@ -83,7 +82,7 @@
   private TimeOnly workingHoursStart;
   private TimeOnly workingHoursEnd;
 
-
+  private ApiService? apiService;
   protected override Task OnInitializedAsync()
   {
     apiService = new(JS, AppsettingsService);
@@ -138,9 +137,9 @@
 
     AddNumberConfigRequest numberConfigRequest = new()
     {
-      BookingWindowSeconds = (int)Math.Floor(BookingWindow.TotalSeconds),
-      BookingMarginSeconds = (int)Math.Floor(BookingMargin.TotalSeconds),
-      BookingIntervalSeconds = (int)Math.Floor(BookingInterval.TotalSeconds),
+      bookingWindowSeconds = (int)Math.Floor(BookingWindow.TotalSeconds),
+      bookingMarginSeconds = (int)Math.Floor(BookingMargin.TotalSeconds),
+      bookingIntervalSeconds = (int)Math.Floor(BookingInterval.TotalSeconds),
     };
 
     ApiResponse<AddNumberConfigResponse> numberConfigResponse = await
@@ -155,8 +154,8 @@
 
     AddNumberRequest addNumberRequest = new()
     {
-      ConfigId = numberConfigResponse.Data!.configId,
-      PhoneId = PhoneId ?? 0
+      configId = numberConfigResponse.Data!.configId,
+      phoneId = PhoneId ?? 0
     };
 
     ApiResponse<AddNumberResponse> addNumberResponse = await apiService.FetchAddNumberEndpoint(addNumberRequest);

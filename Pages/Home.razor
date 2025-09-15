@@ -2,6 +2,7 @@
 @using BookingAssistantWeb.Models
 @using BookingAssistantWeb.Services
 @using System.Text.Json
+@using BookingAssistantWeb.Services.Api
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject TokenService TokenService
@@ -12,51 +13,54 @@
 
 <h1>Moje čísla</h1>
 
-<!-- @foreach (var number in numbers)
-{
-    // Odkaz na stránku s detailem čísla, jako GET parametr nedávat číslo, ale ID čísla z databáze
-    // Pro jednoduchost zde používáme samotné číslo jako identifikátor, ale v reálné aplikaci by to mělo být ID z DB
-    // Například: <NavLink href="@("/number/" + number.Id)">@number</NavLink>
-    <NavLink href="@("/number/" + number)">@number</NavLink>
-    <br />
-} -->
-
 @if (phoneNumbers is null)
 {
-    <p>Načítám...</p>
+  <p>Načítám...</p>
 }
 else
-{ 
-    @foreach (var phone in phoneNumbers)
-    {
-        <NavLink href="@($"/add-number/{phone.Id}")">@phone.Number</NavLink><br />
-    }
+{
+  <p>Count: @phoneNumbers.Count</p>
+  @foreach (var phone in phoneNumbers)
+  {
+    <NavLink href="@($"/change/{phone.id}")">@phone.number</NavLink>
+
+    <br />
+  }
 }
 
 <button @onclick="RedirectAddNumber">Přidat číslo</button>
 
 @code {
-    List<PhoneNumber>? phoneNumbers;
+  List<PhoneNumber>? phoneNumbers;
 
-    protected override async Task OnInitializedAsync()
+  private ApiService? apiService;
+
+  protected override async Task OnInitializedAsync()
+  {
+    apiService = new(JS, AppsettingsService);
+    await LoadNumbers();
+  }
+
+  private async Task LoadNumbers()
+  {
+    if (apiService == null) return;
+
+    ApiResponse<GetUserNumbersResponse> response = await apiService.FetchGetUserNumbersEndpoint();
+
+    if (!response.Success)
     {
-        var response = await JS.InvokeAsync<string>("fetchApi", AppsettingsService.ApiServer, "/user/numbers");
-        //Console.WriteLine($"Response from /user/numbers: {response}");
-
-        if (!string.IsNullOrEmpty(response))
-        {
-            var result = JsonSerializer.Deserialize<PhoneNumbersResponse>(response, 
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            phoneNumbers = result?.PhoneNumbers;
-        }
+      Console.WriteLine($"Failed to load numbers: {response.ErrorMessage}, {response.StatusCode}");
+      return;
     }
 
+    phoneNumbers = response.Data!.phoneNumbers;
+    StateHasChanged();
+  }
 
-    private void RedirectAddNumber()
-    {
-        // Redirect to /number-select page
-        var uri = new Uri(NavigationManager.Uri);
-        var baseUri = uri.GetLeftPart(UriPartial.Authority);
-        NavigationManager.NavigateTo($"{baseUri}/add-number");
-    }
+  private void RedirectAddNumber()
+  {
+    var uri = new Uri(NavigationManager.Uri);
+    var baseUri = uri.GetLeftPart(UriPartial.Authority);
+    NavigationManager.NavigateTo($"{baseUri}/add-number");
+  }
 }
