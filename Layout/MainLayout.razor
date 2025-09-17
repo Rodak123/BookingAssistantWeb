@@ -14,25 +14,31 @@
   private bool _appsettingsLoaded = false;
 
   protected override async Task OnInitializedAsync()
-  {
-    // Load appsettings from JSON
+{
+    // Load appsettings as before
     var appsettings = await Http.GetFromJsonAsync<Dictionary<string, string>>(AppsettingsPath);
     if (appsettings == null || appsettings.Count == 0)
-      throw new Exception("Failed to load appsettings.");
+        throw new Exception("Failed to load appsettings.");
 
     AppsettingsService.Load(appsettings);
     _appsettingsLoaded = true;
 
+    // Redirect to login if no token
+    if (string.IsNullOrEmpty(TokenService.AccessToken))
+    {
+        Navigation.NavigateTo("/google-login", true);
+        return; // stop further initialization
+    }
+
     // Create DotNetObjectReference for JS interop
     DotNetRef = DotNetObjectReference.Create(this);
 
-    // Call JS to refresh token after AppsettingsService is ready
     if (string.IsNullOrEmpty(AppsettingsService.ApiServer))
-      throw new Exception("ApiServer not set in AppsettingsService");
+        throw new Exception("ApiServer not set in AppsettingsService");
 
     await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
-    // Console.WriteLine($"JS call made with: {AppsettingsService.ApiServer}");
-  }
+}
+
 
   [JSInvokable]
   public void SetJwtToken(string token)
