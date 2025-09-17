@@ -1,7 +1,9 @@
 @page "/google-login"
+@layout LandingLayout
 @using BookingAssistantWeb.Services
 @inject IJSRuntime JS
-
+@inject HttpClient Http
+@inject NavigationManager Navigation
 @inject TokenService TokenService
 @inject AppsettingsService AppsettingsService;
 
@@ -14,15 +16,57 @@
 
 @code {
   private string Output = "";
+  private DotNetObjectReference<GoogleLogin>? DotNetRef;
+  private string AppsettingsPath = "appsettings.json";
+  private bool _appsettingsLoaded = false;
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
     if (firstRender)
     {
+      DotNetRef = DotNetObjectReference.Create(this);
+
+    // Load appsettings from JSON
+    var appsettings = await Http.GetFromJsonAsync<Dictionary<string, string>>(AppsettingsPath);
+    if (appsettings == null || appsettings.Count == 0)
+      throw new Exception("Failed to load appsettings.");
+
+    AppsettingsService.Load(appsettings);
+    _appsettingsLoaded = true;
+
+
+    // Call JS to refresh token after AppsettingsService is ready
+    if (string.IsNullOrEmpty(AppsettingsService.ApiServer))
+      throw new Exception("ApiServer not set in AppsettingsService");
+      
+    await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
+    // Console.WriteLine($"JS call made with: {AppsettingsService.ApiServer}");
+   
       // Initialize Google login button
-      await JS.InvokeVoidAsync("initializeGoogleLogin", AppsettingsService.ApiServer);
+      await JS.InvokeVoidAsync("initializeGoogleLogin", AppsettingsService.ApiServer, DotNetRef);
       StateHasChanged();
     }
+  }
+
+  [JSInvokable]
+  public void SetJwtToken(string token)
+  {
+    TokenService.AccessToken = token;
+          Navigation.NavigateTo("/home");
+    StateHasChanged();
+  }
+
+  [JSInvokable]
+  public void ClearJwtToken()
+  {
+    TokenService.Clear();
+    StateHasChanged();
+  }
+
+  
+  public void Dispose()
+  {
+    DotNetRef?.Dispose();
   }
 
 }
