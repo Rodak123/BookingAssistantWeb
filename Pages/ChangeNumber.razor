@@ -120,6 +120,8 @@ else
             Console.WriteLine($"Failed to change config: {numberConfigResponse.ErrorMessage}, {numberConfigResponse.StatusCode}");
             return;
         }
+         Navigation.NavigateTo("/home"); 
+
     }
 
 }
