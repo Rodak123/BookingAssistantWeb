@@ -1,6 +1,9 @@
 ﻿@using BookingAssistantWeb.Services
+@using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints
 @inherits LayoutComponentBase
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 @inject TokenService TokenService
 @inject AppsettingsService AppsettingsService
 @inject HttpClient Http
@@ -49,6 +52,26 @@
   {
     DotNetRef?.Dispose();
   }
+
+  private async Task LogoutAsync()
+  {
+      // Clear the token in TokenService
+      TokenService.Clear();
+
+      // Call the logout endpoint to invalidate the session on the server
+      var apiService = new ApiService(JS, AppsettingsService);
+      var response = await apiService.FetchLogoutGoogleEndpoint();
+
+      if (!response.Success)
+      {
+          Console.WriteLine($"Logout failed: {response.ErrorMessage}, {response.StatusCode}");
+          return;
+      }
+
+      // Navigate to home page
+      Navigation.NavigateTo("/");
+  }
+
 }
 
 @if (!_appsettingsLoaded)
@@ -64,7 +87,7 @@ else
 
     <main>
       <div class="top-row px-4">
-        <a href="/">Log out</a>
+        <button class="btn btn-link" @onclick="LogoutAsync">Log out</button>
       </div>
 
       <article class="content px-4">
