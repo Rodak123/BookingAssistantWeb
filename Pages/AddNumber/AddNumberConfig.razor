@@ -5,6 +5,7 @@
 @inject IJSRuntime JS
 
 @using System.Text.Json
+@using BookingAssistantWeb.Layout.Components
 @using BookingAssistantWeb.Models
 @using BookingAssistantWeb.Services
 @using BookingAssistantWeb.Services.Api
@@ -23,67 +24,17 @@ else
 {
     <p>Číšlo - @phoneNumber?.number</p>
 
-    <EditForm Model="config">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-
-        <div>
-            <label>Booking Window (hh:mm:ss):</label>
-            <input type="text" @bind="config.BookingWindow" />
-        </div>
-
-        <div>
-            <label>Booking Margin (hh:mm:ss):</label>
-            <input type="text" @bind="config.BookingMargin" />
-        </div>
-
-        <div>
-            <label>Booking Interval (hh:mm:ss):</label>
-            <input type="text" @bind="config.BookingInterval" />
-        </div>
-
-        <div>
-            <label>Pracovní doba od:</label>
-            <input type="time" @bind="workingHoursStart" />
-        </div>
-
-        <div>
-            <label>Pracovní doba do:</label>
-            <input type="time" @bind="workingHoursEnd" />
-        </div>
-
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <p style="color:red">@errorMessage</p>
-        }
-    </EditForm>
-
-    <button class="btn btn-primary" @onclick="Save">Uložit</button>
-
-    <p>@status</p>
+    <NumberConfigForm Config="config" InitialConfig="phoneNumberConfig" WorkingHoursStart="workingHoursStart"
+        WorkingHoursEnd="workingHoursEnd" OnValidSubmit="Save" />
 }
 
 @code {
     private string? sessionId = null;
     private PhoneNumberAssignment? phoneNumberAssignment;
+    private PhoneNumberConfig? phoneNumberConfig;
     private PhoneNumber? phoneNumber;
 
-    private string status = "";
-    private string errorMessage = string.Empty;
-
-    private class ConfigData
-    {
-        public string? BookingWindow { get; set; } = "00:30:00";
-        public string? BookingMargin { get; set; } = "00:15:00";
-        public string? BookingInterval { get; set; } = "00:05:00";
-    }
-
-    private ConfigData config = new();
-
-    private TimeSpan BookingWindow;
-    private TimeSpan BookingMargin;
-    private TimeSpan BookingInterval;
-
+    private NumberConfigForm.ConfigData config = new();
     private TimeOnly workingHoursStart;
     private TimeOnly workingHoursEnd;
 
@@ -154,54 +105,27 @@ else
         if (phoneNumber == null)
             return false;
 
+        GetNumberConfigRequest getNumberConfigRequest = new()
+        {
+            numberConfigId = phoneNumberAssignment.phoneNumberConfigId
+        };
+
+        ApiResponse<GetNumberConfigResponse> getNumberConfigResponse = await
+        apiService.FetchGetNumberConfigEndpoint(getNumberConfigRequest);
+
+        phoneNumberConfig = getNumberConfigResponse.Data!.phoneNumberConfig;
+
+        if (phoneNumberConfig == null)
+            return false;
+
         return true;
     }
 
-    private bool Validate()
-    {
-        if (string.IsNullOrWhiteSpace(config.BookingWindow) ||
-        string.IsNullOrWhiteSpace(config.BookingMargin) ||
-        string.IsNullOrWhiteSpace(config.BookingInterval))
-        {
-            errorMessage = "Vyplňte prosím všechna pole.";
-            return false;
-        }
-
-        try
-        {
-            // převod stringů na TimeSpan
-            BookingWindow = TimeSpan.Parse(config.BookingWindow);
-            BookingMargin = TimeSpan.Parse(config.BookingMargin);
-            BookingInterval = TimeSpan.Parse(config.BookingInterval);
-
-            if (BookingWindow <= BookingMargin)
-            {
-                errorMessage = "BookingWindow musí být větší než BookingMargin!";
-                return false;
-            }
-
-
-            if (BookingInterval <= TimeSpan.Zero)
-            {
-                errorMessage = "BookingInterval musí být větší než 0!";
-                return false;
-            }
-
-            return true;
-        }
-        catch (FormatException)
-        {
-            errorMessage = "Prosím zadejte hodnoty ve formátu hh:mm:ss a časy ve formátu hh:mm";
-            return false;
-        }
-    }
-
-    private async Task Save()
+    private async Task Save((TimeSpan bookingWindow, TimeSpan bookingMargin, TimeSpan bookingInterval) validatedData)
     {
         if (apiService == null || phoneNumberAssignment == null || sessionId == null) return;
-        errorMessage = "";
 
-        if (!Validate()) return;
+        var (BookingWindow, BookingMargin, BookingInterval) = validatedData;
 
         ChangeNumberConfigRequest numberConfigRequest = new()
         {
@@ -211,13 +135,11 @@ else
             bookingIntervalSeconds = (int)Math.Floor(BookingInterval.TotalSeconds),
         };
 
-        ApiResponse<ChangeNumberConfigResponse> numberConfigResponse = await
-        apiService.FetchChangeNumberConfigEndpoint(numberConfigRequest);
+        var numberConfigResponse = await apiService.FetchChangeNumberConfigEndpoint(numberConfigRequest);
 
         if (!numberConfigResponse.Success)
         {
             Console.WriteLine($"Failed to change config: {numberConfigResponse.ErrorMessage}, {numberConfigResponse.StatusCode}");
-            errorMessage = numberConfigResponse.ErrorMessage ?? "Failed";
             return;
         }
 

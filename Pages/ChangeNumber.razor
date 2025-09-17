@@ -1,8 +1,125 @@
-@page "/change/{PhoneId:int}"
+@page "/change/{PhoneAssignmentId:int}"
+@using BookingAssistantWeb.Layout.Components
+@using BookingAssistantWeb.Models
+@using BookingAssistantWeb.Services
+@using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints
 
-<p>Todo: edit number options</p>
+@inject NavigationManager Navigation
+@inject HttpClient Http
+@inject AppsettingsService AppsettingsService;
+@inject IJSRuntime JS
+
+<PageTitle>Konfigurace čísla</PageTitle>
+<h3>Konfigurace čísla</h3>
+
+@if (!isLoaded)
+{
+    <p>Načítám</p>
+}
+else
+{
+    <p>Číšlo - @phoneNumber?.number</p>
+
+    <NumberConfigForm Config="config" InitialConfig="phoneNumberConfig" WorkingHoursStart="workingHoursStart"
+        WorkingHoursEnd="workingHoursEnd" OnValidSubmit="Save" />
+}
 
 @code {
-  [Parameter]
-  public int? PhoneId { get; set; }
+    [Parameter]
+    public int? PhoneAssignmentId { get; set; }
+
+    private PhoneNumberAssignment? phoneNumberAssignment;
+    private PhoneNumberConfig? phoneNumberConfig;
+    private PhoneNumber? phoneNumber;
+
+    private NumberConfigForm.ConfigData config = new();
+    private TimeOnly workingHoursStart;
+    private TimeOnly workingHoursEnd;
+
+    private bool isLoaded = false;
+
+    private ApiService? apiService;
+    protected override async Task OnInitializedAsync()
+    {
+        apiService = new(JS, AppsettingsService);
+
+        if (!await LoadAddedNumber())
+        {
+            Navigation.NavigateTo("/home");
+        }
+        isLoaded = true;
+    }
+
+    private async Task<bool> LoadAddedNumber()
+    {
+        if (apiService == null || PhoneAssignmentId == null) return false;
+
+        GetNumberAssignmentRequest request = new()
+        {
+            phoneNumberAssignmentId = PhoneAssignmentId.Value
+        };
+
+        ApiResponse<GetNumberAssignmentResponse> response = await
+        apiService.FetchGetNumberAssignmentEndpoint(request);
+
+        if (!response.Success)
+            return false;
+
+        phoneNumberAssignment = response.Data!.phoneNumberAssignment;
+        StateHasChanged();
+
+        if (phoneNumberAssignment == null)
+            return false;
+
+        GetNumberRequest getNumberRequest = new()
+        {
+            phoneNumberId = phoneNumberAssignment.phoneNumberId
+        };
+        ApiResponse<GetNumberResponse> getNumberResponse = await apiService.FetchGetNumberEndpoint(getNumberRequest);
+
+        phoneNumber = getNumberResponse.Data!.phoneNumber;
+
+        if (phoneNumber == null)
+            return false;
+
+        GetNumberConfigRequest getNumberConfigRequest = new()
+        {
+            numberConfigId = phoneNumberAssignment.phoneNumberConfigId
+        };
+
+        ApiResponse<GetNumberConfigResponse> getNumberConfigResponse = await
+        apiService.FetchGetNumberConfigEndpoint(getNumberConfigRequest);
+
+        phoneNumberConfig = getNumberConfigResponse.Data!.phoneNumberConfig;
+
+        if (phoneNumberConfig == null)
+            return false;
+
+        return true;
+    }
+
+    private async Task Save((TimeSpan bookingWindow, TimeSpan bookingMargin, TimeSpan bookingInterval) validatedData)
+    {
+        if (apiService == null || phoneNumberAssignment == null) return;
+
+        var (BookingWindow, BookingMargin, BookingInterval) = validatedData;
+
+        ChangeNumberConfigRequest numberConfigRequest = new()
+        {
+            configId = phoneNumberAssignment.phoneNumberConfigId,
+            bookingWindowSeconds = (int)Math.Floor(BookingWindow.TotalSeconds),
+            bookingMarginSeconds = (int)Math.Floor(BookingMargin.TotalSeconds),
+            bookingIntervalSeconds = (int)Math.Floor(BookingInterval.TotalSeconds),
+        };
+
+        var numberConfigResponse = await apiService.FetchChangeNumberConfigEndpoint(numberConfigRequest);
+
+        if (!numberConfigResponse.Success)
+        {
+            Console.WriteLine($"Failed to change config: {numberConfigResponse.ErrorMessage}, {numberConfigResponse.StatusCode}");
+            return;
+        }
+    }
+
 }

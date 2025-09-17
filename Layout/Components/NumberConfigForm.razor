@@ -1,0 +1,119 @@
+@using BookingAssistantWeb.Models
+<EditForm Model="Config" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Booking Window (hh:mm:ss):</label>
+        <input type="text" @bind="Config.BookingWindow" />
+    </div>
+
+    <div>
+        <label>Booking Margin (hh:mm:ss):</label>
+        <input type="text" @bind="Config.BookingMargin" />
+    </div>
+
+    <div>
+        <label>Booking Interval (hh:mm:ss):</label>
+        <input type="text" @bind="Config.BookingInterval" />
+    </div>
+
+    <div>
+        <label>Pracovní doba od:</label>
+        <input type="time" @bind="WorkingHoursStart" />
+    </div>
+
+    <div>
+        <label>Pracovní doba do:</label>
+        <input type="time" @bind="WorkingHoursEnd" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p style="color:red">@errorMessage</p>
+    }
+
+    <button type="submit" class="btn btn-primary">Uložit</button>
+</EditForm>
+
+@code {
+    public class ConfigData
+    {
+        public string? BookingWindow { get; set; } = "00:30:00";
+        public string? BookingMargin { get; set; } = "00:15:00";
+        public string? BookingInterval { get; set; } = "00:05:00";
+    }
+
+    [Parameter] public ConfigData Config { get; set; } = new();
+    [Parameter] public TimeOnly WorkingHoursStart { get; set; }
+    [Parameter] public TimeOnly WorkingHoursEnd { get; set; }
+
+    [Parameter] public PhoneNumberConfig? InitialConfig { get; set; }
+
+    [Parameter]
+    public EventCallback<(TimeSpan bookingWindow, TimeSpan bookingMargin, TimeSpan bookingInterval)>
+    OnValidSubmit
+    { get; set; }
+
+    private string errorMessage = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        if (InitialConfig != null)
+        {
+            Config.BookingInterval = InitialConfig.BookingInterval.ToString(@"hh\:mm\:ss");
+            Config.BookingMargin = InitialConfig.BookingMargin.ToString(@"hh\:mm\:ss");
+            Config.BookingWindow = InitialConfig.BookingWindow.ToString(@"hh\:mm\:ss");
+        }
+    }
+
+    private bool Validate(out TimeSpan bookingWindow, out TimeSpan bookingMargin, out TimeSpan bookingInterval)
+    {
+        bookingWindow = TimeSpan.Zero;
+        bookingMargin = TimeSpan.Zero;
+        bookingInterval = TimeSpan.Zero;
+
+        if (string.IsNullOrWhiteSpace(Config.BookingWindow) ||
+        string.IsNullOrWhiteSpace(Config.BookingMargin) ||
+        string.IsNullOrWhiteSpace(Config.BookingInterval))
+        {
+            errorMessage = "Vyplňte prosím všechna pole.";
+            return false;
+        }
+
+        try
+        {
+            bookingWindow = TimeSpan.Parse(Config.BookingWindow);
+            bookingMargin = TimeSpan.Parse(Config.BookingMargin);
+            bookingInterval = TimeSpan.Parse(Config.BookingInterval);
+
+            if (bookingWindow <= bookingMargin)
+            {
+                errorMessage = "BookingWindow musí být větší než BookingMargin!";
+                return false;
+            }
+
+            if (bookingInterval <= TimeSpan.Zero)
+            {
+                errorMessage = "BookingInterval musí být větší než 0!";
+                return false;
+            }
+
+            return true;
+        }
+        catch (FormatException)
+        {
+            errorMessage = "Prosím zadejte hodnoty ve formátu hh:mm:ss a časy ve formátu hh:mm";
+            return false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Validate(out var bw, out var bm, out var bi))
+        {
+            errorMessage = string.Empty;
+            await OnValidSubmit.InvokeAsync((bw, bm, bi));
+        }
+    }
+}

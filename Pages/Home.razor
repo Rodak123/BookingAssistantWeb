@@ -45,7 +45,7 @@ else
             <div class="col">
              @if(pair.phoneNumberAssignment.IsPaid)
                 {
-                    <button type="button" class="btn btn-secondary" @onclick='() => {Navigation.NavigateTo($"/change/{pair.phoneNumber.id}");}'>Změnit nastavení</button>
+                    <button type="button" class="btn btn-secondary" @onclick='() => {Navigation.NavigateTo($"/change/{pair.phoneNumberAssignment.id}");}'>Změnit nastavení</button>
                 }
                 else
                 {
