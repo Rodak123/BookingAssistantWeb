@@ -1,7 +1,6 @@
 using System.Text.Json;
-using BookingAssistantWeb.Models;
 
-namespace BookingAssistantWeb.Services.Api.Endpoints
+namespace BookingAssistantWeb.Services.Api.Endpoints.Google
 {
     public class LogoutGoogleResponse
     {

@@ -1,6 +1,7 @@
 @page "/calendar"
 @using BookingAssistantWeb.Services
 @using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints.Google
 
 @inject HttpClient Http
 @inject IJSRuntime JS
@@ -12,6 +13,7 @@
 
 <h1>Povolení kalendáře Google</h1>
 
+<p>code: @GoogleCode</p>
 <p>Kaledář&nbsp;
     @if (HasCalendarConsent)
     {
@@ -30,6 +32,7 @@
 
 
 @code {
+    private string? GoogleCode = null;
 
     public bool HasCalendarConsent = false;
 
@@ -37,18 +40,80 @@
     protected override async Task OnInitializedAsync()
     {
         apiService = new(JS, AppsettingsService);
-        await LoadCalendarConsentState();
+
+        var uri = new Uri(Navigation.Uri);
+        var query = uri.Query;
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            var queryString = query.TrimStart('?');
+            var parameters = queryString.Split('&', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var param in parameters)
+            {
+                var kv = param.Split('=', 2);
+                if (kv.Length == 2 && kv[0] == "code")
+                {
+                    GoogleCode = Uri.UnescapeDataString(kv[1]);
+                    break;
+                }
+            }
+        }
+
+        await LoadCalendarConsent();
     }
 
-    private Task LoadCalendarConsentState()
+    private async Task LoadCalendarConsent()
     {
-        // TODO: Load from API
         HasCalendarConsent = false;
-        return Task.CompletedTask;
+
+        if (apiService == null)
+            return;
+
+        if (string.IsNullOrEmpty(GoogleCode))
+            return;
+
+        GoogleCalendarRequest request = new()
+        {
+            code = GoogleCode
+        };
+        ApiResponse<GoogleCalendarCodeResponse> response = await apiService.FetchGoogleCalendarCodeEndpoint(request);
+
+        if (!response.Success)
+        {
+            Console.WriteLine($"Failed to send calendar: {response.ErrorMessage}, {response.StatusCode}");
+            return;
+        }
+
+        HasCalendarConsent = true; // TODO: Load from API
     }
 
-    private void ConsentCalendar()
+    private async Task ConsentCalendar()
     {
-        Console.WriteLine("Conscenting calendar");
+        if (apiService == null) return;
+
+        ApiResponse<GetGoogleClientIdResponse> response = await apiService.FetchGetGoogleClientIdEndpoint();
+
+        if (!response.Success)
+        {
+            Console.WriteLine($"Failed to get clientId: {response.ErrorMessage}, {response.StatusCode}");
+            return;
+        }
+
+        string clientId = response.Data!.clientId;
+        string redirectUri = $"{Navigation.BaseUri}calendar";
+
+        string url = "https://accounts.google.com/o/oauth2/v2/auth?" +
+        $"client_id={clientId}&" +
+        $"redirect_uri={redirectUri}&" +
+        "response_type=code&" +
+        "scope=https://www.googleapis.com/auth/calendar&" +
+        "access_type=offline&" +
+        "prompt=consent";
+
+        Console.WriteLine($"url: {redirectUri}");
+        Console.WriteLine($"url: {url}");
+
+        Navigation.NavigateTo(url, forceLoad: true);
     }
 }
