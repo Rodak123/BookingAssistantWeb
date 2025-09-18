@@ -15,58 +15,65 @@
 <pre>@Output</pre>
 
 @code {
-  private string Output = "";
-  private DotNetObjectReference<GoogleLogin>? DotNetRef;
-  private string AppsettingsPath = "appsettings.json";
-  private bool _appsettingsLoaded = false;
+    private string Output = "";
+    private DotNetObjectReference<GoogleLogin>? DotNetRef;
+    private string AppsettingsPath = "appsettings.json";
+    private bool _appsettingsLoaded = false;
 
-  protected override async Task OnAfterRenderAsync(bool firstRender)
-  {
-    if (firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-      DotNetRef = DotNetObjectReference.Create(this);
+        if (firstRender)
+        {
+            DotNetRef = DotNetObjectReference.Create(this);
 
-    // Load appsettings from JSON
-    var appsettings = await Http.GetFromJsonAsync<Dictionary<string, string>>(AppsettingsPath);
-    if (appsettings == null || appsettings.Count == 0)
-      throw new Exception("Failed to load appsettings.");
+            // Load appsettings from JSON
+            var appsettings = await Http.GetFromJsonAsync<Dictionary<string, string>>(AppsettingsPath);
+            if (appsettings == null || appsettings.Count == 0)
+                throw new Exception("Failed to load appsettings.");
 
-    AppsettingsService.Load(appsettings);
-    _appsettingsLoaded = true;
+            AppsettingsService.Load(appsettings);
+            _appsettingsLoaded = true;
 
 
-    // Call JS to refresh token after AppsettingsService is ready
-    if (string.IsNullOrEmpty(AppsettingsService.ApiServer))
-      throw new Exception("ApiServer not set in AppsettingsService");
-      
-    await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
-    // Console.WriteLine($"JS call made with: {AppsettingsService.ApiServer}");
-   
-      // Initialize Google login button
-      await JS.InvokeVoidAsync("initializeGoogleLogin", AppsettingsService.ApiServer, DotNetRef);
-      StateHasChanged();
+            // Call JS to refresh token after AppsettingsService is ready
+            if (string.IsNullOrEmpty(AppsettingsService.ApiServer))
+                throw new Exception("ApiServer not set in AppsettingsService");
+
+            await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
+            // Console.WriteLine($"JS call made with: {AppsettingsService.ApiServer}");
+
+            // Initialize Google login button
+            await JS.InvokeVoidAsync("initializeGoogleLogin", AppsettingsService.ApiServer, DotNetRef);
+            StateHasChanged();
+        }
     }
-  }
 
-  [JSInvokable]
-  public void SetJwtToken(string token)
-  {
-    TokenService.AccessToken = token;
-          Navigation.NavigateTo("/home");
-    StateHasChanged();
-  }
+    [JSInvokable]
+    public void SetJwtToken(string token)
+    {
+        TokenService.AccessToken = token;
+        Navigation.NavigateTo("/home");
+        StateHasChanged();
+    }
 
-  [JSInvokable]
-  public void ClearJwtToken()
-  {
-    TokenService.Clear();
-    StateHasChanged();
-  }
+    [JSInvokable]
+    public void ClearJwtToken()
+    {
+        TokenService.Clear();
+        StateHasChanged();
+    }
 
-  
-  public void Dispose()
-  {
-    DotNetRef?.Dispose();
-  }
+
+    [JSInvokable]
+    public void NoAuth()
+    {
+        // Ignore, already here
+    }
+
+
+    public void Dispose()
+    {
+        DotNetRef?.Dispose();
+    }
 
 }

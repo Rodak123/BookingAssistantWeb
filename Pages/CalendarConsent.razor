@@ -1,0 +1,54 @@
+@page "/calendar"
+@using BookingAssistantWeb.Services
+@using BookingAssistantWeb.Services.Api
+
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject TokenService TokenService
+@inject AppsettingsService AppsettingsService;
+@inject NavigationManager Navigation;
+
+<PageTitle>Kalendář</PageTitle>
+
+<h1>Povolení kalendáře Google</h1>
+
+<p>Kaledář&nbsp;
+    @if (HasCalendarConsent)
+    {
+        <span class="badge rounded-pill text-bg-success">Povololen</span>
+    }
+    else
+    {
+        <span class="badge rounded-pill text-bg-danger">Nepovolen</span>
+    }
+</p>
+
+@if (!HasCalendarConsent)
+{
+    <button type="button" class="btn btn-primary" @onclick="ConsentCalendar">Povolit kalendář</button>
+}
+
+
+@code {
+
+    public bool HasCalendarConsent = false;
+
+    private ApiService? apiService;
+    protected override async Task OnInitializedAsync()
+    {
+        apiService = new(JS, AppsettingsService);
+        await LoadCalendarConsentState();
+    }
+
+    private Task LoadCalendarConsentState()
+    {
+        // TODO: Load from API
+        HasCalendarConsent = false;
+        return Task.CompletedTask;
+    }
+
+    private void ConsentCalendar()
+    {
+        Console.WriteLine("Conscenting calendar");
+    }
+}

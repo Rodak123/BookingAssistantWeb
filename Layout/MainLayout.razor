@@ -9,101 +9,100 @@
 @inject HttpClient Http
 
 @code {
-  private DotNetObjectReference<MainLayout>? DotNetRef;
-  private string AppsettingsPath = "appsettings.json";
-  private bool _appsettingsLoaded = false;
+    private DotNetObjectReference<MainLayout>? DotNetRef;
+    private string AppsettingsPath = "appsettings.json";
+    private bool _appsettingsLoaded = false;
 
-  protected override async Task OnInitializedAsync()
-{
-    // Load appsettings as before
-    var appsettings = await Http.GetFromJsonAsync<Dictionary<string, string>>(AppsettingsPath);
-    if (appsettings == null || appsettings.Count == 0)
-        throw new Exception("Failed to load appsettings.");
-
-    AppsettingsService.Load(appsettings);
-    _appsettingsLoaded = true;
-
-    // Redirect to login if no token
-    if (string.IsNullOrEmpty(TokenService.AccessToken))
+    protected override async Task OnInitializedAsync()
     {
-        Navigation.NavigateTo("/google-login", true);
-        return; // stop further initialization
+        // Load appsettings as before
+        var appsettings = await Http.GetFromJsonAsync<Dictionary<string, string>>(AppsettingsPath);
+        if (appsettings == null || appsettings.Count == 0)
+            throw new Exception("Failed to load appsettings.");
+
+        AppsettingsService.Load(appsettings);
+        _appsettingsLoaded = true;
+
+        // Create DotNetObjectReference for JS interop
+        DotNetRef = DotNetObjectReference.Create(this);
+
+        if (string.IsNullOrEmpty(AppsettingsService.ApiServer))
+            throw new Exception("ApiServer not set in AppsettingsService");
+
+        await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
     }
 
-    // Create DotNetObjectReference for JS interop
-    DotNetRef = DotNetObjectReference.Create(this);
 
-    if (string.IsNullOrEmpty(AppsettingsService.ApiServer))
-        throw new Exception("ApiServer not set in AppsettingsService");
+    [JSInvokable]
+    public void SetJwtToken(string token)
+    {
+        TokenService.AccessToken = token;
+        StateHasChanged();
+    }
 
-    await JS.InvokeAsync<string>("refreshAccessToken", AppsettingsService.ApiServer, DotNetRef);
-}
+    [JSInvokable]
+    public void ClearJwtToken()
+    {
+        TokenService.Clear();
+        StateHasChanged();
+    }
 
+    [JSInvokable]
+    public void NoAuth()
+    {
+        Navigation.NavigateTo("/google-login", true);
+    }
 
-  [JSInvokable]
-  public void SetJwtToken(string token)
-  {
-    TokenService.AccessToken = token;
-    StateHasChanged();
-  }
+    public void Dispose()
+    {
+        DotNetRef?.Dispose();
+    }
 
-  [JSInvokable]
-  public void ClearJwtToken()
-  {
-    TokenService.Clear();
-    StateHasChanged();
-  }
+    private async Task LogoutAsync()
+    {
+        // Clear the token in TokenService
+        TokenService.Clear();
 
-  public void Dispose()
-  {
-    DotNetRef?.Dispose();
-  }
+        // Call the logout endpoint to invalidate the session on the server
+        var apiService = new ApiService(JS, AppsettingsService);
+        var response = await apiService.FetchLogoutGoogleEndpoint();
 
-  private async Task LogoutAsync()
-  {
-      // Clear the token in TokenService
-      TokenService.Clear();
+        if (!response.Success)
+        {
+            Console.WriteLine($"Logout failed: {response.ErrorMessage}, {response.StatusCode}");
+            return;
+        }
 
-      // Call the logout endpoint to invalidate the session on the server
-      var apiService = new ApiService(JS, AppsettingsService);
-      var response = await apiService.FetchLogoutGoogleEndpoint();
-
-      if (!response.Success)
-      {
-          Console.WriteLine($"Logout failed: {response.ErrorMessage}, {response.StatusCode}");
-          return;
-      }
-
-      // Navigate to home page
-      Navigation.NavigateTo("/");
-  }
+        // Navigate to home page
+        Navigation.NavigateTo("/");
+    }
 
 }
 
 @if (!_appsettingsLoaded)
 {
-  <p>Loading...</p>
+    <p>Loading...</p>
 }
 else
 {
-  <div class="page">
-    <div class="sidebar">
-      <NavMenu />
-    </div>
-
-    <main>
-      <div class="top-row px-4">
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          <span class="bi bi-person-circle" aria-hidden="true">Ahoj</span>
-          /*~~~~~~~~~~~~~~~~~~~*/
-          
-          <button class="btn btn-link" @onclick="LogoutAsync">Log out</button>
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
         </div>
-      </div>
 
-      <article class="content px-4">
-        @Body
-      </article>
-    </main>
-  </div>
+        <main>
+            <div class="top-row px-4">
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <span class="bi bi-person-circle" aria-hidden="true">Ahoj</span>
+                    /*~~~~~~~~~~~~~~~~~~~*/
+
+                    <button class="btn btn-link" @onclick="LogoutAsync">Log out</button>
+                </div>
+            </div>
+
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
 }
