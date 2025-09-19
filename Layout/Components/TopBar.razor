@@ -69,13 +69,14 @@
 
 }
 
-<div class="top-row px-4">
+<div class="top-row px-4 d-flex justify-content-end align-items-center">
     <div class="dropdown px-2">
         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            @user?.givenName
+            @user?.givenName 
+            @user?.familyName
             @if (user?.picture != null)
             {
-                <img src="@user?.picture" alt="User Picture" class="user-picture" />
+                <img src="@user?.picture" alt="User Picture" class="user-picture ms-2" height="40" width="40" />
             }
             else
             {
