@@ -13,7 +13,6 @@
 
 <h1>Povolení kalendáře Google</h1>
 
-<p>code: @GoogleCode</p>
 <p>Kaledář&nbsp;
     @if (HasCalendarConsent)
     {
@@ -61,9 +60,35 @@
         }
 
         await LoadCalendarConsent();
+
+        if (!HasCalendarConsent)
+        {
+            await SendCodeToServer();
+        }
+
+
+        if (!string.IsNullOrEmpty(GoogleCode))
+        {
+            Navigation.NavigateTo("/calendar");
+        }
     }
 
     private async Task LoadCalendarConsent()
+    {
+        HasCalendarConsent = false;
+
+        if (apiService == null)
+            return;
+
+        ApiResponse<CheckGoogleCalendarResponse> response = await apiService.FetchCheckGoogleCalendarEndpoint();
+
+        if (!response.Success)
+            return;
+
+        HasCalendarConsent = response.Data!.hasAccess;
+    }
+
+    private async Task SendCodeToServer()
     {
         HasCalendarConsent = false;
 
@@ -110,9 +135,6 @@
         "scope=https://www.googleapis.com/auth/calendar&" +
         "access_type=offline&" +
         "prompt=consent";
-
-        Console.WriteLine($"url: {redirectUri}");
-        Console.WriteLine($"url: {url}");
 
         Navigation.NavigateTo(url, forceLoad: true);
     }
