@@ -14,7 +14,7 @@
     private DotNetObjectReference<MainLayout>? DotNetRef;
     private string AppsettingsPath = "appsettings.json";
     private bool _appsettingsLoaded = false;
-    
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -36,7 +36,7 @@
 
     }
 
-    
+
 
     [JSInvokable]
     public void SetJwtToken(string token)
@@ -63,12 +63,14 @@
         DotNetRef?.Dispose();
     }
 
-   
+
 }
 
 @if (!TokenService.IsLoggedIn)
 {
-    <p>Loading...</p>
+    <div style="width: 100vw; height: 100vh;">
+        <Loader />
+    </div>
 }
 else
 {
