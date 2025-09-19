@@ -1,4 +1,5 @@
 @page "/conversations"
+@using BookingAssistantWeb.Layout.Components
 @using BookingAssistantWeb.Models
 @using BookingAssistantWeb.Services
 @using BookingAssistantWeb.Services.Api
@@ -17,7 +18,7 @@
 
 @if (conversations == null)
 {
-    <p>Načítám...</p>
+    <Loader />
 }
 else if (conversations.Count == 0)
 {
@@ -30,7 +31,7 @@ else
         {
             <div class="w-100 mt-2 border d-flex justify-content-between">
                 <p>@conversation.id, počet zpráv: @conversation.messageCount</p>
-                <button @onclick="() => OpenConversation(conversation.id)">Zobrazit</button>
+                <button class="btn btn-primary" @onclick="() => OpenConversation(conversation.id)">Zobrazit</button>
             </div>
         }
     </div>
