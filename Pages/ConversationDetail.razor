@@ -1,0 +1,96 @@
+@page "/conversation/{ConversationId:int}"
+@using BookingAssistantWeb.Models
+@using BookingAssistantWeb.Services
+@using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints
+@using BookingAssistantWeb.Services.Api.Endpoints.Google
+
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject TokenService TokenService
+@inject AppsettingsService AppsettingsService;
+@inject NavigationManager Navigation;
+
+<PageTitle>Konverzace</PageTitle>
+
+<h1>Konverzace</h1>
+<NavLink href="conversations">Zpět</NavLink>
+
+@if (conversation == null || conversation.messages == null)
+{
+    <p>Načítám...</p>
+}
+else
+{
+    <p>Id: @conversation.id</p>
+    <p>Délka: @conversation.durationSeconds s</p>
+    <p>Počet zpráv: @conversation.messageCount s</p>
+    <p>Zprávy</p>
+    <div class="w-100 d-flex flex-column">
+        @foreach (var message in conversation.messages)
+        {
+            var flex = message.isFromBot ? "justify-content-start" : "justify-content-end";
+
+            <div class="w-100 mt-2 border d-flex @flex">
+                <div class="w-30">
+                    <p>@message.date |
+                        @if (message.isFromBot)
+                        {
+                            <span>BOT</span>
+                        }
+                        else
+                        {
+                            <span>UŽIVATEL</span>
+                        }
+                    </p>
+                    @if (message.isFromBot)
+                    {
+                        <span class="badge rounded-pill text-bg-secondary">@message.content</span>
+                    }
+                    else
+                    {
+                        <span class="badge rounded-pill text-bg-primary">@message.content</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public int? ConversationId { get; set; }
+
+    private Conversation? conversation = null;
+
+    private ApiService? apiService;
+    protected override async Task OnInitializedAsync()
+    {
+        apiService = new(JS, AppsettingsService);
+
+        await LoadConversation();
+    }
+
+    private async Task LoadConversation()
+    {
+        if (apiService == null || ConversationId == null)
+            return;
+
+        GetConversationRequest request = new()
+        {
+            conversationId = ConversationId.Value
+        };
+
+        ApiResponse<GetConversationResponse> response = await apiService.FetchGetConversationEndpoint(request);
+
+        if (!response.Success)
+        {
+            Console.WriteLine($"Failed to get conversation: {response.StatusCode}, {response.ErrorMessage}");
+            return;
+        }
+
+        conversation = response.Data!.conversation;
+    }
+
+}

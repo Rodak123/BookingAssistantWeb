@@ -1,0 +1,71 @@
+@page "/conversations"
+@using BookingAssistantWeb.Models
+@using BookingAssistantWeb.Services
+@using BookingAssistantWeb.Services.Api
+@using BookingAssistantWeb.Services.Api.Endpoints
+@using BookingAssistantWeb.Services.Api.Endpoints.Google
+
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject TokenService TokenService
+@inject AppsettingsService AppsettingsService;
+@inject NavigationManager Navigation;
+
+<PageTitle>Konverzace</PageTitle>
+
+<h1>Konverzace</h1>
+
+@if (conversations == null)
+{
+    <p>Načítám...</p>
+}
+else if (conversations.Count == 0)
+{
+    <p>Žádné konverzace</p>
+}
+else
+{
+    <div class="w-100 d-flex flex-column">
+        @foreach (var conversation in conversations)
+        {
+            <div class="w-100 mt-2 border d-flex justify-content-between">
+                <p>@conversation.id, počet zpráv: @conversation.messageCount</p>
+                <button @onclick="() => OpenConversation(conversation.id)">Zobrazit</button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+
+    private List<Conversation>? conversations;
+
+    private ApiService? apiService;
+    protected override async Task OnInitializedAsync()
+    {
+        apiService = new(JS, AppsettingsService);
+
+        await LoadConversations();
+    }
+
+    private async Task LoadConversations()
+    {
+        if (apiService == null)
+            return;
+
+        ApiResponse<GetConversationsResponse> response = await apiService.FetchGetConversationsEndpoint();
+
+        if (!response.Success)
+        {
+            Console.WriteLine($"Failed to get conversations: {response.StatusCode}, {response.ErrorMessage}");
+            return;
+        }
+
+        conversations = response.Data!.conversations;
+    }
+
+    private void OpenConversation(int conversationId)
+    {
+        Navigation.NavigateTo($"/conversation/{conversationId}");
+    }
+}
